@@ -9,8 +9,6 @@ namespace FSM
     public class FiniteStateMachine
     {
 
-        public event Action<Enum> Changed;
-
         private StateMapping currentState;
         private StateMapping destinationState;
         private Dictionary<Enum, StateMapping> stateLookup;
@@ -22,10 +20,10 @@ namespace FSM
         private MonoBehaviour script;
         private Type enumType;
   
-        public void Init<T>(MonoBehaviour script)
+        public void Init(MonoBehaviour script, Enum initState)
         {
             this.script = script;
-            enumType = typeof(T);
+            enumType = initState.GetType();
             Array values = Enum.GetValues(enumType);
             stateLookup = new Dictionary<Enum, StateMapping>();
             foreach (Enum v in values)
@@ -89,6 +87,7 @@ namespace FSM
                     }
                 }
             }
+            ChangeState(initState);
         }
 
         public void ChangeState(Enum newState, StateTransition transition = StateTransition.Safe)
@@ -171,11 +170,6 @@ namespace FSM
                 }
 
                 enterRoutine = null;
-
-                if (Changed != null)
-                {
-                    Changed(currentState.state);
-                }
             }
 
             isInTransition = false;
