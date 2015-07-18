@@ -184,13 +184,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   go: {fileID: 2100931118}
-  thisPropertyPath: ColorController.state
+  thisPropertyPath: StateEnter.state
   compareToType: 1
   other: {fileID: 0}
   otherPropertyPath: 
   constantValueGeneric: Success
   compareType: 0
-  comparisonType: 0
+  comparisonType: 4
   ignoreCase: 0
 --- !u!1 &1446452455
 GameObject:
@@ -447,6 +447,6 @@ MonoBehaviour:
   repeatCheckFrame: 1
   repeatEveryFrame: 1
   hasFailed: 0
-  checkMethods: 2
+  checkMethods: 1
   m_ActionBase: {fileID: 353887423}
   checksPerformed: 0
