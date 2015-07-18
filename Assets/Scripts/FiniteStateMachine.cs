@@ -18,8 +18,8 @@ public class FiniteStateMachine
     private IEnumerator enterRoutine;
     private IEnumerator queuedChange;
     private MonoBehaviour script;
-
-    public FiniteStateMachine(MonoBehaviour script)
+  
+    public void Init<T>(MonoBehaviour script)
     {
         this.script = script;
         Array values = Enum.GetValues(typeof(Enum));
@@ -272,8 +272,20 @@ public enum StateTransition
 [AttributeUsage(AttributeTargets.Method)]
 public class StateBehaviourAttribute : Attribute
 {
-    public Enum state;
-    public StateCallback on;
+    private Enum _state;
+    private StateCallback _on;
+
+    public Enum state
+    {
+        get { return _state; }
+        set { _state = value; }
+    }
+
+    public StateCallback on
+    {
+        get { return _on; }
+        set { _on = value; }
+    }
 }
 
 public enum StateCallback
