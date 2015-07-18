@@ -1,0 +1,52 @@
+#+STARTUP: indent
+* Simple Finite State Machine for Unity3D (C#)
+Very effective way to manager game state. Idea from [[https://github.com/thefuntastic/Unity3d-Finite-State-Machine]]
++ Simple use of Enum as state definition.
++ Simple initialization
++ Config by Attribute
+* Usage
+To use FSM only need a few simple steps
+** A Finite State Machine Entity
+#+BEGIN_SRC
+private FiniteStateMachine fsm = new FiniteStateMachine();
+#+END_SRC
+** A enum for States
+#+BEGIN_SRC 
+public enum State
+{
+    Success,
+    Failure,
+}
+#+END_SRC
+** Config state callbacks
+#+BEGIN_SRC 
+[StateBehaviour(state = "Success", on = "Enter")]
+void ChangeStateToSuccess()
+{
+    // Do somthing
+}
+#+END_SRC
+** Init FSM
+#+BEGIN_SRC 
+fsm.Init(this,State.Failure); 
+#+END_SRC
+** Now you can call */fsm.ChangeState(xxx)/*
+#+BEGIN_SRC 
+fsm.ChangeState(State.Success);
+#+END_SRC
+** Use some MonoBehaviour method like */Update/* 
+#+BEGIN_SRC 
+void Update() {
+    fsm.Update();
+}
+#+END_SRC
+* Supported method
+| method      | Couroutines supported |
+|-------------+-----------------------|
+| Enter       |           *           |
+| Exit        |           *           |
+| FixedUpdate |                       |
+| Update      |                       |
+| LateUpdate  |                       |
+| Finally     |           *           |
+
