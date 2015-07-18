@@ -4,296 +4,296 @@ using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
 
-public class FiniteStateMachine
+namespace FSM
 {
-
-    public event Action<Enum> Changed;
-
-    private StateMapping currentState;
-    private StateMapping destinationState;
-    private Dictionary<Enum, StateMapping> stateLookup;
-    private bool isInTransition = false;
-    private IEnumerator currentTransitioin;
-    private IEnumerator exitRoutine;
-    private IEnumerator enterRoutine;
-    private IEnumerator queuedChange;
-    private MonoBehaviour script;
-  
-    public void Init<T>(MonoBehaviour script)
+    public class FiniteStateMachine
     {
-        this.script = script;
-        Array values = Enum.GetValues(typeof(Enum));
-        stateLookup = new Dictionary<Enum, StateMapping>();
-        foreach (Enum v in values)
-        {
-            StateMapping mapping = new StateMapping(v);
-            stateLookup.Add(v, mapping);
-        }
 
+        public event Action<Enum> Changed;
 
-        MethodInfo[] methods = script.GetType().GetMethods(BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic);
-        foreach (MethodInfo method in methods)
+        private StateMapping currentState;
+        private StateMapping destinationState;
+        private Dictionary<Enum, StateMapping> stateLookup;
+        private bool isInTransition = false;
+        private IEnumerator currentTransitioin;
+        private IEnumerator exitRoutine;
+        private IEnumerator enterRoutine;
+        private IEnumerator queuedChange;
+        private MonoBehaviour script;
+        private Type enumType;
+  
+        public void Init<T>(MonoBehaviour script)
         {
-            foreach (StateBehaviourAttribute sba in method.GetCustomAttributes(typeof(StateBehaviourAttribute), true))
+            this.script = script;
+            enumType = typeof(T);
+            Array values = Enum.GetValues(enumType);
+            stateLookup = new Dictionary<Enum, StateMapping>();
+            foreach (Enum v in values)
             {
-                StateMapping targetState = stateLookup[sba.state];
+                StateMapping mapping = new StateMapping(v);
+                stateLookup.Add(v, mapping);
+            }
 
-                switch (sba.on)
+
+            MethodInfo[] methods = script.GetType().GetMethods(BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic);
+            foreach (MethodInfo method in methods)
+            {
+                foreach (StateBehaviourAttribute sba in method.GetCustomAttributes(typeof(StateBehaviourAttribute), true))
                 {
-                    case StateCallback.Enter:
-                        if (method.ReflectedType == typeof(IEnumerator))
-                        {
-                            targetState.Enter = CreateDelegate<Func<IEnumerator>>(method, script);
-                        }
-                        else
-                        {
-                            Action action = CreateDelegate<Action>(method, script);
-                            targetState.Enter = () =>
+                    StateMapping targetState = stateLookup[(Enum)Enum.Parse(enumType, sba.state)];
+
+                    switch (sba.on)
+                    {
+                        case StateCallback.Enter:
+                            if (method.ReturnType == typeof(IEnumerator))
                             {
-                                action();
-                                return null;
-                            };
-                        }
-                        break;
-                    case StateCallback.Exit:
-                        if (method.ReturnType == typeof(IEnumerator))
-                        {
-                            targetState.Exit = CreateDelegate<Func<IEnumerator>>(method, script);
-                        }
-                        else
-                        {
-                            Action action = CreateDelegate<Action>(method, script);
-                            targetState.Exit = () =>
+                                targetState.Enter = CreateDelegate<Func<IEnumerator>>(method, script);
+                            }
+                            else
                             {
-                                action();
-                                return null;
-                            };
-                        }
-                        break;
-                    case StateCallback.Finally:
-                        targetState.Finally = CreateDelegate<Action>(method, script);
-                        break;
-                    case StateCallback.Update:
-                        targetState.Update = CreateDelegate<Action>(method, script);
-                        break;
-                    case StateCallback.LateUpdate:
-                        targetState.LateUpdate = CreateDelegate<Action>(method, script);
-                        break;
-                    case StateCallback.FixedUpdate:
-                        targetState.FixedUpdate = CreateDelegate<Action>(method, script);
-                        break;
+                                Action action = CreateDelegate<Action>(method, script);
+                                targetState.Enter = () =>
+                                {
+                                    action();
+                                    return null;
+                                };
+                            }
+                            break;
+                        case StateCallback.Exit:
+                            if (method.ReturnType == typeof(IEnumerator))
+                            {
+                                targetState.Exit = CreateDelegate<Func<IEnumerator>>(method, script);
+                            }
+                            else
+                            {
+                                Action action = CreateDelegate<Action>(method, script);
+                                targetState.Exit = () =>
+                                {
+                                    action();
+                                    return null;
+                                };
+                            }
+                            break;
+                        case StateCallback.Finally:
+                            targetState.Finally = CreateDelegate<Action>(method, script);
+                            break;
+                        case StateCallback.Update:
+                            targetState.Update = CreateDelegate<Action>(method, script);
+                            break;
+                        case StateCallback.LateUpdate:
+                            targetState.LateUpdate = CreateDelegate<Action>(method, script);
+                            break;
+                        case StateCallback.FixedUpdate:
+                            targetState.FixedUpdate = CreateDelegate<Action>(method, script);
+                            break;
+                    }
                 }
             }
         }
-    }
 
-    public void ChangeState(Enum newState, StateTransition transition = StateTransition.Safe)
-    {
-        StateMapping nextState = stateLookup[newState];
-        if (currentState == nextState)
-            return;
-        if (queuedChange != null)
+        public void ChangeState(Enum newState, StateTransition transition = StateTransition.Safe)
         {
-            script.StopCoroutine(queuedChange);
-            queuedChange = null;
-        }
+            StateMapping nextState = stateLookup[newState];
+            if (currentState == nextState)
+                return;
+            if (queuedChange != null)
+            {
+                script.StopCoroutine(queuedChange);
+                queuedChange = null;
+            }
 
-        switch (transition)
-        {
-            case StateTransition.Safe:
-                if (isInTransition)
-                {
+            switch (transition)
+            {
+                case StateTransition.Safe:
+                    if (isInTransition)
+                    {
+                        if (exitRoutine != null)
+                        {
+                            destinationState = nextState;
+                            return;
+                        }
+
+                        if (enterRoutine != null)
+                        {
+                            queuedChange = WaitForPreviousTransition(nextState);
+                            script.StartCoroutine(queuedChange);
+                            return;
+                        }
+                    }
+                    break;
+                case StateTransition.Overwrite:
+                    if (currentTransitioin != null)
+                    {
+                        script.StopCoroutine(currentTransitioin);
+                    }
                     if (exitRoutine != null)
                     {
-                        destinationState = nextState;
-                        return;
+                        script.StopCoroutine(exitRoutine);
                     }
-
                     if (enterRoutine != null)
                     {
-                        queuedChange = WaitForPreviousTransition(nextState);
-                        script.StartCoroutine(queuedChange);
-                        return;
+                        script.StopCoroutine(enterRoutine);
                     }
-                }
-                break;
-            case StateTransition.Overwrite:
-                if (currentTransitioin != null)
-                {
-                    script.StopCoroutine(currentTransitioin);
-                }
+
+                    if (currentState != null)
+                        currentState.Finally();
+                    currentState = null;
+                    break;
+            }
+            isInTransition = true;
+            currentTransitioin = ChangeToNewStateRouting(nextState);
+            script.StartCoroutine(currentTransitioin);
+        }
+
+        private IEnumerator ChangeToNewStateRouting(StateMapping newState)
+        {
+            destinationState = newState;
+            if (currentState != null)
+            {
+                exitRoutine = currentState.Exit();
                 if (exitRoutine != null)
                 {
-                    script.StopCoroutine(exitRoutine);
+                    yield return script.StartCoroutine(exitRoutine);
                 }
+                exitRoutine = null;
+                currentState.Finally();
+            }
+
+            currentState = destinationState;
+
+            if (currentState != null)
+            {
+                enterRoutine = currentState.Enter();
+
                 if (enterRoutine != null)
                 {
-                    script.StopCoroutine(enterRoutine);
+                    yield return script.StartCoroutine(enterRoutine);
                 }
 
-                if (currentState != null)
-                    currentState.Finally();
-                currentState = null;
-                break;
-        }
-        isInTransition = true;
-        currentTransitioin = ChangeToNewStateRouting(nextState);
-        script.StartCoroutine(currentTransitioin);
-    }
+                enterRoutine = null;
 
-    private IEnumerator ChangeToNewStateRouting(StateMapping newState)
-    {
-        destinationState = newState;
-        if (currentState != null)
-        {
-            exitRoutine = currentState.Exit();
-            if (exitRoutine != null)
-            {
-                yield return script.StartCoroutine(exitRoutine);
-            }
-            exitRoutine = null;
-            currentState.Finally();
-        }
-
-        currentState = destinationState;
-
-        if (currentState != null)
-        {
-            enterRoutine = currentState.Enter();
-
-            if (enterRoutine != null)
-            {
-                yield return script.StartCoroutine(enterRoutine);
+                if (Changed != null)
+                {
+                    Changed(currentState.state);
+                }
             }
 
-            enterRoutine = null;
+            isInTransition = false;
+        }
 
-            if (Changed != null)
+        private IEnumerator WaitForPreviousTransition(StateMapping nextState)
+        {
+            while (isInTransition)
             {
-                Changed(currentState.state);
+                yield return null;
+            }
+            ChangeState(nextState.state);
+        }
+
+
+        private V CreateDelegate<V>(MethodInfo method, System.Object target) where V : class
+        {
+            V ret = Delegate.CreateDelegate(typeof(V), target, method) as V;
+
+            if (ret == null)
+            {
+                throw new ArgumentException("Unabled to create delegate for method called " + method.Name);
+            }
+            return ret;
+        }
+
+        private class StateMapping
+        {
+            public Enum state;
+
+            public Func<IEnumerator> Enter = DoNothingCoroutine;
+            public Func<IEnumerator> Exit = DoNothingCoroutine;
+            public Action Finally = DoNothing;
+            public Action Update = DoNothing;
+            public Action LateUpdate = DoNothing;
+            public Action FixedUpdate = DoNothing;
+
+            public StateMapping(Enum state)
+            {
+                this.state = state;
+            }
+
+
+            public static void DoNothing()
+            {
+            }
+
+            public static void DoNothingCollider(Collider other)
+            {
+            }
+
+            public static void DoNothingCollision(Collision other)
+            {
+            }
+
+            public static IEnumerator DoNothingCoroutine()
+            {
+                yield break;
             }
         }
 
-        isInTransition = false;
+        public void FixedUpdate()
+        {
+            if (currentState != null)
+            {
+                currentState.FixedUpdate();
+            }
+        }
+
+        public void Update()
+        {
+            if (currentState != null && isInTransition)
+            {
+                currentState.Update();
+            }
+        }
+
+        public void LateUpdate()
+        {
+            if (currentState != null && isInTransition)
+            {
+                currentState.LateUpdate();
+            }
+        }
     }
 
-    private IEnumerator WaitForPreviousTransition(StateMapping nextState)
+    public enum StateTransition
     {
-        while (isInTransition)
-        {
-            yield return null;
-        }
-        ChangeState(nextState.state);
+        Overwrite,
+        Safe
     }
 
-
-    private V CreateDelegate<V>(MethodInfo method, System.Object target) where V : class
+    [AttributeUsage(AttributeTargets.Method)]
+    public class StateBehaviourAttribute : Attribute
     {
-        V ret = Delegate.CreateDelegate(typeof(V), target, method) as V;
+        private string _state;
+        private string _on;
 
-        if (ret == null)
+        public string state
         {
-            throw new ArgumentException("Unabled to create delegate for method called " + method.Name);
+            get { return _state; }
+            set { _state = value; }
         }
-        return ret;
+
+        public string on
+        {
+            get { return _on; }
+            set { _on = value; }
+        }
     }
 
-    private class StateMapping
+    public static class StateCallback
     {
-        public Enum state;
-
-        public Func<IEnumerator> Enter = DoNothingCoroutine;
-        public Func<IEnumerator> Exit = DoNothingCoroutine;
-        public Action Finally = DoNothing;
-        public Action Update = DoNothing;
-        public Action LateUpdate = DoNothing;
-        public Action FixedUpdate = DoNothing;
-
-        public StateMapping(Enum state)
-        {
-            this.state = state;
-        }
-
-
-        public static void DoNothing()
-        {
-        }
-
-        public static void DoNothingCollider(Collider other)
-        {
-        }
-
-        public static void DoNothingCollision(Collision other)
-        {
-        }
-
-        public static IEnumerator DoNothingCoroutine()
-        {
-            yield break;
-        }
+        public const string Enter = "Enter";
+        public const string Exit = "Exit";
+        public const string Finally = "Finally";
+        public const string Update = "Update";
+        public const string LateUpdate = "LateUpdate";
+        public const string FixedUpdate = "FixedUpdate";
     }
-
-    public void FixedUpdate()
-    {
-        if (currentState != null)
-        {
-            currentState.FixedUpdate();
-        }
-    }
-
-    public void Update()
-    {
-        if (currentState != null && isInTransition)
-        {
-            currentState.Update();
-        }
-    }
-
-    public void LateUpdate()
-    {
-        if (currentState != null && isInTransition)
-        {
-            currentState.LateUpdate();
-        }
-    }
-}
-
-public interface IStateBehaviour<Enum>
-{
-    Enum GetStatue();
-}
-
-public enum StateTransition
-{
-    Overwrite,
-    Safe
-}
-
-[AttributeUsage(AttributeTargets.Method)]
-public class StateBehaviourAttribute : Attribute
-{
-    private Enum _state;
-    private StateCallback _on;
-
-    public Enum state
-    {
-        get { return _state; }
-        set { _state = value; }
-    }
-
-    public StateCallback on
-    {
-        get { return _on; }
-        set { _on = value; }
-    }
-}
-
-public enum StateCallback
-{
-    Enter,
-    Exit,
-    Finally,
-    Update,
-    LateUpdate,
-    FixedUpdate
 }
