@@ -12,13 +12,13 @@ public class StateEnter : MonoBehaviour
         Failure,
     }
 
-
+    [HideInInspector]
     public string state;
     
 
     void Awake()
     {
-        fsm.Init<State>(this);        
+        fsm.Init(this,State.Failure); 
     }
     
     void Start()
