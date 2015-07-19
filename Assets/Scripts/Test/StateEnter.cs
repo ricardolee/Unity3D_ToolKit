@@ -9,7 +9,7 @@ public class StateEnter : MonoBehaviour
     public enum State
     {
         Success,
-        Failure,
+        Failure
     }
 
     [HideInInspector]
