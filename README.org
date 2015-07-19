@@ -6,9 +6,9 @@ Very effective way to manager game state. Idea from [[https://github.com/thefunt
 + Config by Attribute
 * Usage
 To use FSM only need a few simple steps
-** A Finite State Machine Entity
+** Inherits from StateBehaviour or NetworkStateBehaviour
 #+BEGIN_SRC
-private FiniteStateMachine fsm = new FiniteStateMachine();
+public class SomeScript : StateBehaviour 
 #+END_SRC
 ** A enum for States
 #+BEGIN_SRC 
@@ -28,17 +28,11 @@ void ChangeStateToSuccess()
 #+END_SRC
 ** Init FSM
 #+BEGIN_SRC 
-fsm.Init(this,State.Failure); 
+Init(State.Failure); 
 #+END_SRC
-** Now you can call /fsm.ChangeState(xxx)/
+** Now you can call /ChangeState(xxx)/
 #+BEGIN_SRC 
-fsm.ChangeState(State.Success);
-#+END_SRC
-** Use some MonoBehaviour method like /Update/
-#+BEGIN_SRC 
-void Update() {
-    fsm.Update();
-}
+ChangeState(State.Success);
 #+END_SRC
 * Supported method
 | method      | Couroutines supported |
