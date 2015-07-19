@@ -42,5 +42,5 @@ ChangeState(State.Success);
 | FixedUpdate |                       |
 | Update      |                       |
 | LateUpdate  |                       |
-| Finally     |           *           |
+| Finally     |                       |
 
