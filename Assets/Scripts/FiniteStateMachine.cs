@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Networking;
 using System;
 using System.Reflection;
 using System.Collections;
@@ -9,7 +10,7 @@ namespace FSM
     public class FiniteStateMachine
     {
 
-        private StateMapping currentState;
+        private  StateMapping currentState;
         private StateMapping destinationState;
         private Dictionary<Enum, StateMapping> stateLookup;
         private bool isInTransition = false;
@@ -17,9 +18,9 @@ namespace FSM
         private IEnumerator exitRoutine;
         private IEnumerator enterRoutine;
         private IEnumerator queuedChange;
-        private MonoBehaviour script;
+        public MonoBehaviour script;
         private Type enumType;
-  
+
         public void Init(MonoBehaviour script, Enum initState)
         {
             this.script = script;
@@ -142,6 +143,7 @@ namespace FSM
             isInTransition = true;
             currentTransitioin = ChangeToNewStateRouting(nextState);
             script.StartCoroutine(currentTransitioin);
+            return;
         }
 
         private IEnumerator ChangeToNewStateRouting(StateMapping newState)
@@ -231,17 +233,18 @@ namespace FSM
             }
         }
 
+        public Enum GetState() {
+            return currentState.state;
+        }
+
         public void FixedUpdate()
         {
-            if (currentState != null)
-            {
-                currentState.FixedUpdate();
-            }
+            currentState.FixedUpdate();
         }
 
         public void Update()
         {
-            if (currentState != null && isInTransition)
+            if (isInTransition)
             {
                 currentState.Update();
             }
@@ -249,7 +252,7 @@ namespace FSM
 
         public void LateUpdate()
         {
-            if (currentState != null && isInTransition)
+            if (isInTransition)
             {
                 currentState.LateUpdate();
             }
@@ -289,5 +292,74 @@ namespace FSM
         public const string Update = "Update";
         public const string LateUpdate = "LateUpdate";
         public const string FixedUpdate = "FixedUpdate";
+    }
+
+
+    [RequireComponent(typeof(FiniteStateMachineManager))]
+    public class StateBehaviour : MonoBehaviour {
+        private FiniteStateMachine fsm = new FiniteStateMachine();
+        private FiniteStateMachineManager _fsmm;
+        private FiniteStateMachineManager fsmm {
+            get {
+                if (_fsmm == null)
+                {
+                    _fsmm = GetComponent<FiniteStateMachineManager>();
+                    if (_fsmm == null)
+                    {
+                        throw new Exception("Please make sure FiniteSateMachineManager is a commponent");
+                    }
+                }
+                return _fsmm;
+            }
+        }
+        
+        public Enum GetState()
+        {
+            return fsm.GetState();
+        }
+
+        protected void Init(Enum state) 
+        {
+            fsm.Init(this, state);
+            fsmm.AddFSM(fsm);
+        }
+        
+        protected virtual void ChangeState(Enum newState, StateTransition transition = StateTransition.Safe) {
+            fsm.ChangeState(newState, transition);
+        }
+    }
+
+    [RequireComponent(typeof(FiniteStateMachineManager))]
+    public class NetworkStateBehaviour : NetworkBehaviour {
+        private FiniteStateMachine fsm = new FiniteStateMachine();
+        private FiniteStateMachineManager _fsmm;
+        private FiniteStateMachineManager fsmm {
+            get {
+                if (_fsmm == null)
+                {
+                    _fsmm = GetComponent<FiniteStateMachineManager>();
+                    if (_fsmm == null)
+                    {
+                        throw new Exception("Please make sure FiniteSateMachineManager is a commponent");
+                    }
+                }
+                return _fsmm;
+            }
+        }
+        
+        public Enum GetState()
+        {
+            return fsm.GetState();
+        }
+
+        protected void Init(Enum state) 
+        {
+            fsm.Init(this, state);
+            fsmm.AddFSM(fsm);
+        }
+        
+        protected virtual void ChangeState(Enum newState, StateTransition transition = StateTransition.Safe) {
+            fsm.ChangeState(newState, transition);
+        }
     }
 }
