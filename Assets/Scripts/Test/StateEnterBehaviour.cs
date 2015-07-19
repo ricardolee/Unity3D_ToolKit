@@ -2,7 +2,7 @@
 using System.Collections;
 using FSM;
 
-public class StateEnterBehaviour :  StateBehaviour{
+public class StateEnterBehaviour :  StateBehaviour {
 
 	public enum State
 	{
