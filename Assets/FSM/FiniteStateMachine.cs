@@ -318,7 +318,7 @@ namespace FSM
             return fsm.GetState();
         }
 
-        protected void Init(Enum state) 
+        protected void InitState(Enum state) 
         {
             fsm.Init(this, state);
             fsmm.AddFSM(fsm);
@@ -352,7 +352,7 @@ namespace FSM
             return fsm.GetState();
         }
 
-        protected void Init(Enum state) 
+        protected void InitState(Enum state) 
         {
             fsm.Init(this, state);
             fsmm.AddFSM(fsm);

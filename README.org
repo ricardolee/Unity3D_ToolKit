@@ -28,7 +28,7 @@ void ChangeStateToSuccess()
 #+END_SRC
 ** Init FSM
 #+BEGIN_SRC 
-Init(State.Failure); 
+InitState(State.Failure); 
 #+END_SRC
 ** Now you can call /ChangeState(xxx)/
 #+BEGIN_SRC 

@@ -17,7 +17,7 @@ public class StateEnterBehaviour :  StateBehaviour {
 	public bool isCalledUpdate = false;
 	// Use this for initialization
 	void Start () {
-		Init(State.Success);
+		InitState(State.Success);
 	}
 	
 
