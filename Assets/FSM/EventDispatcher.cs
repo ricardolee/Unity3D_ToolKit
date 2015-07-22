@@ -8,7 +8,6 @@ namespace FSM
 {
     public class EventDispatcher : MonoBehaviour {
 
-        
         void Awake() {
             List<MonoBehaviour> scripts = new List<MonoBehaviour>();
             GetComponentsInChildren(true, scripts);
@@ -19,254 +18,149 @@ namespace FSM
                 {
                     foreach (EventAttribute ea in method.GetCustomAttributes(typeof(EventAttribute), true))
                     {
-                        
+                        Register(ea.name, GetExecuteDelegate(method, script));
                     }
                 }
             }
         }
-        
-        public void On(string eventName, Action action) {
-            Register(eventName, action, (arg1,arg2,arg3,arg4) => {
-                    action();
-                    return true;
-                });
+
+        private static EventFunc GetExecuteDelegate(MethodInfo methodInfo, object instance)
+        {
+            // parameters to execute
+            ParameterExpression instanceParameter = 
+                Expression.Parameter(typeof(object), "instance");
+            ParameterExpression parametersParameter = 
+                Expression.Parameter(typeof(object[]), "parameters");
+
+            // build parameter list
+            List<Expression> parameterExpressions = new List<Expression>();
+            ParameterInfo[] paramInfos = methodInfo.GetParameters();
+            for (int i = 0; i < paramInfos.Length; i++)
+            {
+                // (Ti)parameters[i]
+                BinaryExpression valueObj = Expression.ArrayIndex(parametersParameter, Expression.Constant(i));
+                UnaryExpression valueCast = Expression.Convert(valueObj, paramInfos[i].ParameterType);
+                parameterExpressions.Add(valueCast);
+            }
+
+            // non-instance for static method, or ((TInstance)instance)
+            Expression instanceCast = methodInfo.IsStatic ? null : 
+                Expression.Convert(instanceParameter, methodInfo.ReflectedType);
+            
+            // static invoke or ((TInstance)instance).Method
+            MethodCallExpression methodCall = Expression.Call(instanceCast, methodInfo, parameterExpressions);
+
+            // ((TInstance)instance).Method((T0)parameters[0], (T1)parameters[1], ...)
+            if (methodCall.Type != typeof(bool))
+            {
+                Expression<Action<object, object[]>> lambda = 
+                    Expression.Lambda<Action<object, object[]>>(methodCall, instanceParameter, parametersParameter);
+
+                Action<object, object[]> execute = lambda.Compile();
+                return (ref object arg1, ref object arg2, ref object arg3, ref object arg4, ref object arg5) =>
+                    {
+                        object[] args = {arg1, arg2, arg3, arg4, arg5};
+                        execute(instance, args);
+                        return true;
+                    };
+            }
+            else
+            {
+                UnaryExpression castMethodCall = Expression.Convert(
+                                                                    methodCall, typeof(object));
+                Expression<Func<object, object[], object>> lambda = 
+                    Expression.Lambda<Func<object, object[], object>>(
+                                                                      castMethodCall, instanceParameter, parametersParameter);
+                Func<object, object[], object> execute = lambda.Compile();
+                return (ref object arg1, ref object arg2, ref object arg3, ref object arg4, ref object arg5) =>
+                    {
+                        object[] args = {arg1, arg2, arg3, arg4, arg5};                        
+                        return (bool)execute(instance, args);
+                    };
+            }
         }
 
-        public void On<T1>(string eventName, Action<T1> action) {
-            Register(eventName, action, (arg1,arg2,arg3,arg4) => {
-                    T1		param1;
-                    try { param1 = (T1)arg1; } catch { param1 = default(T1); }
-                    action(param1);
-                    return true;
-                });
-        }
 
-        public void On<T1,T2>(string eventName, Action<T1,T2> action) {
-            Register(eventName, action, (arg1,arg2,arg3,arg4) => {
-                    T1		param1;
-                    T2		param2;
-                    try { param1 = (T1)arg1; } catch { param1 = default(T1); }
-                    try { param2 = (T2)arg2; } catch { param2 = default(T2); }
-                    action(param1, param2);
-                    return true;
-                });
-        }
-
-        public void On<T1,T2,T3>(string eventName, Action<T1,T2,T3> action) {
-            Register(eventName, action, (arg1,arg2,arg3,arg4) => {
-                    T1		param1;
-                    T2		param2;
-                    T3		param3;
-                    try { param1 = (T1)arg1; } catch { param1 = default(T1); }
-                    try { param2 = (T2)arg2; } catch { param2 = default(T2); }
-                    try { param3 = (T3)arg3; } catch { param3 = default(T3); }
-                    action(param1, param2, param3);
-                    return true;
-                });
-        }
-
-
-        public void On(string eventName, Func<bool> action) {
-            Register(eventName, action, (arg1,arg2,arg3,arg4) => {
-                    return action();
-                });
-        }
-
-        public void On<T1>(string eventName, Func<T1,bool> action) {
-            Register(eventName, action, (arg1,arg2,arg3,arg4) => {
-                    T1		param1;
-                    try { param1 = (T1)arg1; } catch { param1 = default(T1); }
-                    return action(param1) ;
-                });
-        }
-        
-        public void On<T1,T2>(string eventName, Func<T1,T2,bool> action) {
-            Register(eventName, action, (arg1,arg2,arg3,arg4) => {
-                    T1		param1;
-                    T2		param2;
-                    try { param1 = (T1)arg1; } catch { param1 = default(T1); }
-                    try { param2 = (T2)arg2; } catch { param2 = default(T2); }
-                    return action(param1, param2);
-                });
-        }
-
-        public void On<T1,T2,T3>(string eventName, Func<T1,T2,T3,bool> action) {
-            Register(eventName, action, (arg1,arg2,arg3,arg4) => {
-                    T1		param1;
-                    T2		param2;
-                    T3		param3;
-                    try { param1 = (T1)arg1; } catch { param1 = default(T1); }
-                    try { param2 = (T2)arg2; } catch { param2 = default(T2); }
-                    try { param3 = (T3)arg3; } catch { param3 = default(T3); }
-                    return(action(param1, param2, param3));
-                });
-        }
-
-        public void On<T1,T2,T3,T4>(string eventName, Func<T1,T2,T3,T4,bool> action) {
-            Register(eventName, action, (arg1,arg2,arg3,arg4) => {
-                    T1		param1;
-                    T2		param2;
-                    T3		param3;
-                    T4          param4;
-                    try { param1 = (T1)arg1; } catch { param1 = default(T1); }
-                    try { param2 = (T2)arg2; } catch { param2 = default(T2); }
-                    try { param3 = (T3)arg3; } catch { param3 = default(T3); }
-                    try { param4 = (T4)arg4; } catch { param4 = default(T4); }
-                    return(action(param1, param2, param3, param4));
-                });
-        }
-        
         public void Trigger(string eventName) {
-            Call(eventName, null, null, null, null);
+            Call(eventName, null, null, null, null, null);
         }
 
         public void Trigger(string eventName, object param1) {
-            Call(eventName, param1, null, null, null);
+            Call(eventName, param1, null, null, null, null);
         }
 
         public void Trigger(string eventName, object param1, object param2) {
-            Call(eventName, param1, param2, null, null);
+            Call(eventName, param1, param2, null, null, null);
         }
 
         public void Trigger(string eventName, object param1, object param2, object param3) {
-            Call(eventName, param1, param2, param3, null);
+            Call(eventName, param1, param2, param3, null, null);
         }
         
         public void Trigger(string eventName, object param1, object param2, object param3, object param4) {
-            Call(eventName, param1, param2, param3, param4);
+            Call(eventName, param1, param2, param3, param4, null);
+        }
+        
+        public void Trigger(string eventName, object param1, object param2, object param3, object param4, object param5) {
+            Call(eventName, param1, param2, param3, param4, param5);
         }
 
-        public void Cancel(string eventName, Delegate action) {
-            var key = Key.Create(eventName, action);
-            Listener listener = mListenerLookup[key];
+        public void Cancel(int listenerID)
+        {
+            Listener listener = mRegisteredListener[listenerID];
             if (listener == null)
             {
-                throw new Exception("Action " + action + " not registered on Event " + eventName);
-            }
-            mRegisteredEvents[eventName].RemoveAll((l) => l.mAction == action);
-            mRegisteredDelegate[action].RemoveAll((l) => l.mEventName == eventName);
-            mListenerLookup.Remove(key);
-        }
-
-        public void Cancel(string eventName)
-        {
-            List<Listener> list = mRegisteredEvents[eventName];
-            if (list == null)
-            {
-                throw new Exception("Event: " + eventName + " not registered");
+                throw new Exception("Listener Id: " + listenerID + " not registered");
             } 
-            foreach(Listener listener in list)
-            {
-                mListenerLookup.Remove(Key.Create(listener.mEventName, listener.mOrigin));
-                mRegisteredDelegate[listener.mOrigin].RemoveAll((l) => l.mEventName == eventName);
-            }
-            list.Clear();
+            mRegisteredEvents[listener.mEventName].RemoveAll((t) => t.mId == listenerID);
+            mRegisteredListener.Remove(listenerID);
         }
 
-        public void Cancel(Delegate action)
-        {
-            List<Listener> list = mRegisteredDelegate[action];
-            if (list == null)
-            {
-                throw new Exception("Action: " + action + " not registered");
-            } 
-            foreach(Listener listener in list)
-            {
-                mListenerLookup.Remove(Key.Create(listener.mEventName, listener.mOrigin));
-                mRegisteredEvents[listener.mEventName].RemoveAll((l) => l.mAction == action);
-            }
-            list.Clear();
-            
-        }
-
-        void Register(string eventName, Delegate origin, Func<object,object,object,object,bool> action)
+        int Register(string eventName, EventFunc action)
         {
             Listener  listener = new Listener();
+            listener.mId = mNextListenID++;
             listener.mEventName = eventName;
-            listener.mOrigin = origin;
             listener.mAction = action;
             List<Listener> listenerList;
             if (!mRegisteredEvents.TryGetValue(eventName, out listenerList))
             {
                 listenerList = new List<Listener>();
+                mRegisteredEvents.Add(eventName, listenerList);
             }
             listenerList.Insert(0, listener);
-            if (!mRegisteredDelegate.TryGetValue(origin, out listenerList))
-            {
-                listenerList = new List<Listener>();
-            }
-            listenerList.Add(listener);
-            mListenerLookup.Add(Key.Create(eventName, origin), listener);
-        }
-
-        void Call(String eventName, object param1, object param2, object param3, object param4)
-        {
-            List<Listener> listenerList = mRegisteredEvents[eventName];
-            foreach(Listener listener in listenerList)
-            {
-                if(!listener.mAction(param1, param2, param3, param4))
-                {
-                    break;
-                }
-            }
-        }
-
-        private class Listener
-        {
-            public string mEventName;
-            public Delegate mOrigin;
-            public Func<object,object,object,object,bool> mAction;
-        }
-
-        private struct Key
-        {
-            public static Key Create(string eventName, Delegate origin)
-            {
-                Key key = new Key();
-                key.mEventName = eventName;
-                key.mOrigin = origin;
-                return key;
-            }
-            
-            string mEventName;
-            Delegate mOrigin;
-            
-            
-            public override bool Equals(object obj)
-            {
-                if (!(obj is Key))
-                {
-                    return false;
-                }
-                
-                Key other = (Key)obj;
-                
-                if(other.mEventName == mEventName && other.mOrigin == mOrigin)
-                {
-                    return true;
-                }
-                else 
-                {
-                    return false;
-                }
-
-            }
-
-            public override int GetHashCode()
-            {
-                return (mEventName + mOrigin).GetHashCode();
-            }
-
-            public override string ToString()
-            {
-                return "Event: " + mEventName + " Delegate: " + mOrigin;
-            }
-            
+            mRegisteredListener.Add(listener.mId, listener);
+            return listener.mId;
         }
         
+        void Call(String eventName, object param1, object param2, object param3, object param4, object param5)
+        {
+            List<Listener> listenerList;
+            if( mRegisteredEvents.TryGetValue(eventName, out listenerList))
+            {
+                foreach(Listener listener in listenerList)
+                {
+                    if(!listener.mAction(ref param1,ref param2,ref param3,ref param4,ref param5))
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        delegate bool EventFunc(ref object arg1, ref object arg2,ref object arg3,ref object arg4,ref object arg5);
+        
+        private class Listener
+        {
+            public int           mId;
+            public string        mEventName;
+            public EventFunc mAction;
+        }
+
         Dictionary<string, List<Listener>> mRegisteredEvents  = new Dictionary<string, List<Listener>>();
-        Dictionary<Delegate, List<Listener>> mRegisteredDelegate = new Dictionary<Delegate, List<Listener>>();
-        Dictionary<Key, Listener> mListenerLookup = new Dictionary<Key, Listener>();
+        Dictionary<int, Listener> mRegisteredListener = new Dictionary<int, Listener>();
+        int mNextListenID = 1;
+        
     }
 
     [AttributeUsage(AttributeTargets.Method)]

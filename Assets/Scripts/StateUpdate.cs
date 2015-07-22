@@ -2,14 +2,14 @@
 using System.Collections;
 using FSM;
 
-public class StateEnterBehaviour :  StateBehaviour {
+public class StateUpdate :  StateBehaviour {
 
 	public enum State
 	{
 		Success,
 		Failure
 	}
-	
+
 	[HideInInspector]
 	public string state;
 
