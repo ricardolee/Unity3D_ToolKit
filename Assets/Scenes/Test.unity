@@ -290,7 +290,7 @@ MonoBehaviour:
   repeatCheckFrame: 1
   repeatEveryFrame: 1
   hasFailed: 0
-  checkMethods: 4
+  checkMethods: 2
   m_ActionBase: {fileID: 2118814562}
   checksPerformed: 0
 --- !u!114 &1309833964
@@ -378,7 +378,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   go: {fileID: 1987331687}
-  thisPropertyPath: StateEnterBehaviour.isCalledUpdate
+  thisPropertyPath: StateUpdate.isCalledUpdate
   compareToType: 1
   other: {fileID: 0}
   otherPropertyPath: 
@@ -537,7 +537,7 @@ MonoBehaviour:
   checkAfterTime: 1
   repeatCheckTime: 1
   repeatEveryTime: 1
-  checkAfterFrames: 10
+  checkAfterFrames: 1
   repeatCheckFrame: 1
   repeatEveryFrame: 1
   hasFailed: 0

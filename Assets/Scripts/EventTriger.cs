@@ -23,12 +23,13 @@ public class EventTriger : MonoBehaviour
     [Event(name = FLAG_CHANGE_EVENT)]
     void ChangeFlag(int f)
     {
+        Debug.Log("Triger");
         flag = f;
     }
 
-    [Event(name = FLAG_CHANGE_EVENT)]
-    void FilterFlag(ref int f)
+    [Event(name = FLAG_CHANGE_EVENT, isFilter = true)]
+    void FilterFlag(object[] objs)
     {
-        f = f * 2;
+        objs[0] = (int)objs[0] * 2;
     }
 }

@@ -2,7 +2,7 @@
 using System.Collections;
 using FSM;
 
-public class StateUpdate :  StateBehaviour {
+public class StateUpdate : StateBehaviour {
 
 	public enum State
 	{
@@ -24,6 +24,6 @@ public class StateUpdate :  StateBehaviour {
 	[StateBehaviour(state = "Success", on = "Update")]
 	void SuccessUpdate()
 	{
-		isCalledUpdate = true;
+            isCalledUpdate = true;
 	}
 }

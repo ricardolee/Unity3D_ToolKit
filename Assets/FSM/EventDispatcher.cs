@@ -18,91 +18,62 @@ namespace FSM
                 {
                     foreach (EventAttribute ea in method.GetCustomAttributes(typeof(EventAttribute), true))
                     {
-                        Register(ea.name, GetExecuteDelegate(method, script));
+                        Register(ea.name, GetExecuteDelegate(method, script, ea.isFilter));
                     }
                 }
             }
         }
 
-        private static EventFunc GetExecuteDelegate(MethodInfo methodInfo, object instance)
+        delegate void mAction(object[] args);
+        
+        private EventFunc GetExecuteDelegate(MethodInfo methodInfo, object instance, bool isFilter)
         {
-            // parameters to execute
-            ParameterExpression instanceParameter = 
-                Expression.Parameter(typeof(object), "instance");
-            ParameterExpression parametersParameter = 
-                Expression.Parameter(typeof(object[]), "parameters");
-
-            // build parameter list
-            List<Expression> parameterExpressions = new List<Expression>();
-            ParameterInfo[] paramInfos = methodInfo.GetParameters();
-            for (int i = 0; i < paramInfos.Length; i++)
+            if (methodInfo.ReturnType != typeof(bool) && methodInfo.ReturnType != typeof(void))
             {
-                // (Ti)parameters[i]
-                BinaryExpression valueObj = Expression.ArrayIndex(parametersParameter, Expression.Constant(i));
-                UnaryExpression valueCast = Expression.Convert(valueObj, paramInfos[i].ParameterType);
-                parameterExpressions.Add(valueCast);
+                throw new Exception("Not suport that return type not bool or void");
             }
-
-            // non-instance for static method, or ((TInstance)instance)
-            Expression instanceCast = methodInfo.IsStatic ? null : 
-                Expression.Convert(instanceParameter, methodInfo.ReflectedType);
+            ParameterExpression paramsExp = Expression.Parameter(typeof(object[]), "params");
             
-            // static invoke or ((TInstance)instance).Method
-            MethodCallExpression methodCall = Expression.Call(instanceCast, methodInfo, parameterExpressions);
-
-            // ((TInstance)instance).Method((T0)parameters[0], (T1)parameters[1], ...)
-            if (methodCall.Type != typeof(bool))
+            ConstantExpression instanceExp = methodInfo.IsStatic? null : Expression.Constant(instance, instance.GetType());
+            ParameterInfo[] paramInfos = methodInfo.GetParameters();
+            List<Expression> parameterExpressions = new List<Expression>();
+            if(isFilter)
             {
-                Expression<Action<object, object[]>> lambda = 
-                    Expression.Lambda<Action<object, object[]>>(methodCall, instanceParameter, parametersParameter);
-
-                Action<object, object[]> execute = lambda.Compile();
-                return (ref object arg1, ref object arg2, ref object arg3, ref object arg4, ref object arg5) =>
-                    {
-                        object[] args = {arg1, arg2, arg3, arg4, arg5};
-                        execute(instance, args);
-                        return true;
-                    };
+                if (paramInfos.Length != 1 || paramInfos[0].ParameterType != typeof(object[]))
+                {
+                    throw new Exception("The filer must only one param whith object[]");
+                }
+                parameterExpressions.Add(paramsExp);
             }
             else
             {
-                UnaryExpression castMethodCall = Expression.Convert(
-                                                                    methodCall, typeof(object));
-                Expression<Func<object, object[], object>> lambda = 
-                    Expression.Lambda<Func<object, object[], object>>(
-                                                                      castMethodCall, instanceParameter, parametersParameter);
-                Func<object, object[], object> execute = lambda.Compile();
-                return (ref object arg1, ref object arg2, ref object arg3, ref object arg4, ref object arg5) =>
-                    {
-                        object[] args = {arg1, arg2, arg3, arg4, arg5};                        
-                        return (bool)execute(instance, args);
-                    };
+                for (int i = 0; i < paramInfos.Length; i++)
+                {
+                    parameterExpressions.Add(Expression.Convert(Expression.ArrayIndex(paramsExp, Expression.Constant(i, typeof(int))), paramInfos[i].ParameterType));
+                }
+            }
+            
+            MethodCallExpression methodCall = Expression.Call(instanceExp, methodInfo, parameterExpressions);
+
+            if (methodCall.Type == typeof(bool))
+            {
+                Expression<EventFunc> lambda = Expression.Lambda<EventFunc>(methodCall, paramsExp);
+                return lambda.Compile();
+            }
+            else
+            {
+                Expression<mAction> lambda = 
+                    Expression.Lambda<mAction>(methodCall, paramsExp);
+
+                mAction execute = lambda.Compile();
+
+                return (object[] args) => { execute(args); return true; };
             }
         }
 
 
-        public void Trigger(string eventName) {
-            Call(eventName, null, null, null, null, null);
-        }
-
-        public void Trigger(string eventName, object param1) {
-            Call(eventName, param1, null, null, null, null);
-        }
-
-        public void Trigger(string eventName, object param1, object param2) {
-            Call(eventName, param1, param2, null, null, null);
-        }
-
-        public void Trigger(string eventName, object param1, object param2, object param3) {
-            Call(eventName, param1, param2, param3, null, null);
-        }
-        
-        public void Trigger(string eventName, object param1, object param2, object param3, object param4) {
-            Call(eventName, param1, param2, param3, param4, null);
-        }
-        
-        public void Trigger(string eventName, object param1, object param2, object param3, object param4, object param5) {
-            Call(eventName, param1, param2, param3, param4, param5);
+        public void Trigger(string eventName, params object[] args) {
+            Call(eventName, args);
         }
 
         public void Cancel(int listenerID)
@@ -116,31 +87,40 @@ namespace FSM
             mRegisteredListener.Remove(listenerID);
         }
 
+        int Register(Listener listener)
+        {
+            if(listener == null) {
+                throw new Exception("Listener can't be null");
+            }
+            
+            List<Listener> listenerList;
+            if (!mRegisteredEvents.TryGetValue(listener.mEventName, out listenerList))
+            {
+                listenerList = new List<Listener>();
+                mRegisteredEvents.Add(listener.mEventName, listenerList);
+            }
+            listenerList.Insert(0, listener);
+            mRegisteredListener.Add(listener.mId, listener);
+            return listener.mId;
+
+        }
         int Register(string eventName, EventFunc action)
         {
             Listener  listener = new Listener();
             listener.mId = mNextListenID++;
             listener.mEventName = eventName;
             listener.mAction = action;
-            List<Listener> listenerList;
-            if (!mRegisteredEvents.TryGetValue(eventName, out listenerList))
-            {
-                listenerList = new List<Listener>();
-                mRegisteredEvents.Add(eventName, listenerList);
-            }
-            listenerList.Insert(0, listener);
-            mRegisteredListener.Add(listener.mId, listener);
-            return listener.mId;
+            return Register(listener);
         }
         
-        void Call(String eventName, object param1, object param2, object param3, object param4, object param5)
+        void Call(String eventName, object[] args)
         {
             List<Listener> listenerList;
-            if( mRegisteredEvents.TryGetValue(eventName, out listenerList))
+            if(mRegisteredEvents.TryGetValue(eventName, out listenerList))
             {
                 foreach(Listener listener in listenerList)
                 {
-                    if(!listener.mAction(ref param1,ref param2,ref param3,ref param4,ref param5))
+                    if(!listener.mAction(args))
                     {
                         break;
                     }
@@ -148,12 +128,13 @@ namespace FSM
             }
         }
 
-        delegate bool EventFunc(ref object arg1, ref object arg2,ref object arg3,ref object arg4,ref object arg5);
         
-        private class Listener
+        delegate bool EventFunc(object[] args);
+
+        class Listener
         {
-            public int           mId;
-            public string        mEventName;
+            public int       mId;
+            public string    mEventName;
             public EventFunc mAction;
         }
 
@@ -167,11 +148,17 @@ namespace FSM
     public class EventAttribute : Attribute
     {
         private string _name;
-
+        private bool _isFilter = false;
         public string name
         {
             get { return _name; }
             set { _name = value; }
+        }
+
+        public bool isFilter
+        {
+            get { return _isFilter; }
+            set { _isFilter = value; } 
         }
     }
 
