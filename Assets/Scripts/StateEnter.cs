@@ -2,34 +2,29 @@
 using System.Collections;
 using FSM;
 
+[RequireComponent(typeof(FiniteStateMachine))]
 public class StateEnter : MonoBehaviour
 {
-    private FiniteStateMachine fsm = new FiniteStateMachine();
-
-    public enum State
-    {
-        Success,
-        Failure
-    }
+    private FiniteStateMachine fsm;
 
     [HideInInspector]
-    public string state;
+    public bool flag = false;
     
-
     void Awake()
     {
-        fsm.Init(this,State.Failure); 
+        fsm = GetComponent<FiniteStateMachine>();
+        fsm.ChangeState("GameState", "Failure");
     }
     
     void Start()
     {
-        fsm.ChangeState(State.Success);
+        fsm.ChangeState("GameState", "Success");
     }
     
-    [StateBehaviour(state = "Success", on = "Enter")]
+    [StateListener(state = "GameState", when = "Success", on = "Enter")]
     void ChangeStateToSuccess()
     {
-        state = State.Success.ToString();
+        flag = true;
     }
 
 }

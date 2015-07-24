@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections;
 using FSM;
+
+[RequireComponent(typeof(EventDispatcher))]
 public class EventTriger : MonoBehaviour
 {
 
@@ -20,14 +22,13 @@ public class EventTriger : MonoBehaviour
 
     }
 
-    [Event(name = FLAG_CHANGE_EVENT)]
+    [EventListener(name = FLAG_CHANGE_EVENT)]
     void ChangeFlag(int f)
     {
-        Debug.Log("Triger");
         flag = f;
     }
 
-    [Event(name = FLAG_CHANGE_EVENT, isFilter = true)]
+    [EventFilter(name = FLAG_CHANGE_EVENT)]
     void FilterFlag(object[] objs)
     {
         objs[0] = (int)objs[0] * 2;

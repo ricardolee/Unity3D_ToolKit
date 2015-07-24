@@ -7,18 +7,22 @@ using System.Linq.Expressions;
 namespace FSM
 {
     public class EventDispatcher : MonoBehaviour {
-
+        private BindingFlags mMethodBindingFlags = BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic;
         void Awake() {
             List<MonoBehaviour> scripts = new List<MonoBehaviour>();
             GetComponentsInChildren(true, scripts);
             foreach (MonoBehaviour script in scripts)
             {
-                MethodInfo[] methods = script.GetType().GetMethods(BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic);
+                MethodInfo[] methods = script.GetType().GetMethods(mMethodBindingFlags);
                 foreach (MethodInfo method in methods)
                 {
-                    foreach (EventAttribute ea in method.GetCustomAttributes(typeof(EventAttribute), true))
+                    foreach (EventListenerAttribute ea in method.GetCustomAttributes(typeof(EventListenerAttribute), true))
                     {
-                        Register(ea.name, GetExecuteDelegate(method, script, ea.isFilter));
+                        Register(ea.name, method, script, ea.weight, false);
+                    }
+                    foreach (EventFilterAttribute ea in method.GetCustomAttributes(typeof(EventFilterAttribute), true))
+                    {
+                        Register(ea.name, method, script, ea.weight, true);
                     }
                 }
             }
@@ -72,22 +76,25 @@ namespace FSM
         }
 
 
-        public void Trigger(string eventName, params object[] args) {
-            Call(eventName, args);
+        public int Trigger(string eventName, params object[] args) {
+            return Call(eventName, args);
         }
 
-        public void Cancel(int listenerID)
+        /*
+        public bool Cancel(Listener listener)
         {
-            Listener listener = mRegisteredListener[listenerID];
-            if (listener == null)
+            List<Listener> listeners = null;
+            if (mRegisteredEvents.TryGetValue(listener.mEventName, out listeners))
             {
-                throw new Exception("Listener Id: " + listenerID + " not registered");
-            } 
-            mRegisteredEvents[listener.mEventName].RemoveAll((t) => t.mId == listenerID);
-            mRegisteredListener.Remove(listenerID);
+                return listeners.Remove(listener);
+            }
+            else
+            {
+                return false;
+            }
         }
-
-        int Register(Listener listener)
+        */
+        Listener Register(Listener listener)
         {
             if(listener == null) {
                 throw new Exception("Listener can't be null");
@@ -99,67 +106,126 @@ namespace FSM
                 listenerList = new List<Listener>();
                 mRegisteredEvents.Add(listener.mEventName, listenerList);
             }
-            listenerList.Insert(0, listener);
-            mRegisteredListener.Add(listener.mId, listener);
-            return listener.mId;
+            listenerList.Add(listener);
+            listenerList.Sort();
+            return listener;
 
         }
-        int Register(string eventName, EventFunc action)
+        
+        internal Listener Register(string eventName, EventFunc action, int weight, bool isFilter)
         {
             Listener  listener = new Listener();
             listener.mId = mNextListenID++;
             listener.mEventName = eventName;
             listener.mAction = action;
+            listener.mWeight = weight;
+            listener.mIsFilter = isFilter;
             return Register(listener);
         }
         
-        void Call(String eventName, object[] args)
+        internal Listener Register(string eventName, MethodInfo methodInfo, object instance, int weight, bool isFilter)
         {
-            List<Listener> listenerList;
+            return Register(eventName, GetExecuteDelegate(methodInfo, instance, isFilter), weight, isFilter);
+        }
+        
+        internal Listener Register(string eventName, string methodName, object instance, int weight = 1000, bool isFilter = false)
+        {
+            MethodInfo methodInfo = instance.GetType().GetMethod(methodName, mMethodBindingFlags);
+            if (methodInfo ==  null)
+            {
+                throw new Exception("Not find the method : " + methodName);
+            }
+            return Register(eventName,GetExecuteDelegate(methodInfo, instance, isFilter), weight, isFilter);
+        }
+        
+        /*
+        public Listener Register(string eventName, string methodName, object instance, int weight = 1000)
+        {
+            return Register(eventName, methodName, instance, weight, false);
+        }
+        */
+
+        int Call(String eventName, object[] args)
+        {
+            List<Listener> listenerList = null;
             if(mRegisteredEvents.TryGetValue(eventName, out listenerList))
             {
                 foreach(Listener listener in listenerList)
                 {
                     if(!listener.mAction(args))
                     {
-                        break;
+                        return 2;
                     }
                 }
             }
-        }
 
-        
-        delegate bool EventFunc(object[] args);
-
-        class Listener
-        {
-            public int       mId;
-            public string    mEventName;
-            public EventFunc mAction;
+            if(listenerList != null && listenerList.Count !=0 )
+            {
+                return 0;
+            }
+            else
+            {
+                return 1;
+            }
         }
 
         Dictionary<string, List<Listener>> mRegisteredEvents  = new Dictionary<string, List<Listener>>();
-        Dictionary<int, Listener> mRegisteredListener = new Dictionary<int, Listener>();
         int mNextListenID = 1;
         
     }
 
+    delegate bool EventFunc(object[] args);
+
+    class Listener : IComparable<Listener>
+    {
+        internal int       mId;
+        internal string    mEventName;
+        internal int       mWeight;
+        internal bool      mIsFilter;
+        internal EventFunc mAction;
+
+        public int CompareTo(Listener other)
+        {
+            return mWeight.CompareTo(other.mWeight);
+        }
+    }
+
+
     [AttributeUsage(AttributeTargets.Method)]
-    public class EventAttribute : Attribute
+    public class EventListenerAttribute : Attribute
     {
         private string _name;
-        private bool _isFilter = false;
+        private int _weight = 1000;
         public string name
         {
             get { return _name; }
             set { _name = value; }
         }
 
-        public bool isFilter
+        public int weight
         {
-            get { return _isFilter; }
-            set { _isFilter = value; } 
+            get {return _weight; }
+            set { _weight = value; }
         }
     }
+
+    [AttributeUsage(AttributeTargets.Method)]
+    public class EventFilterAttribute : Attribute
+    {
+        private string _name;
+        private int _weight = -1000;
+        public string name
+        {
+            get { return _name; }
+            set { _name = value; }
+        }
+
+        public int weight
+        {
+            get {return _weight; }
+            set { _weight = value; }
+        }
+    }
+
 
 }

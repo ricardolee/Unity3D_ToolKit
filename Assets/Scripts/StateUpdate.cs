@@ -2,28 +2,30 @@
 using System.Collections;
 using FSM;
 
-public class StateUpdate : StateBehaviour {
+[RequireComponent(typeof(FiniteStateMachine))]
+public class StateUpdate : MonoBehaviour {
+    
+    [HideInInspector]
+    public string state;
 
-	public enum State
-	{
-		Success,
-		Failure
-	}
+    [HideInInspector]
+    public bool flag = false;
 
-	[HideInInspector]
-	public string state;
+    FiniteStateMachine fsm;
+    // Use this for initialization
+    
+    void Start () {
+        fsm = GetComponent<FiniteStateMachine>();
+        fsm.ChangeState("GameState", "Success");
+    }
 
-	[HideInInspector]
-	public bool isCalledUpdate = false;
-	// Use this for initialization
-	void Start () {
-		InitState(State.Success);
-	}
-	
+    void Update() {
+        fsm.Trigger("GameState", "Update");
+    }
 
-	[StateBehaviour(state = "Success", on = "Update")]
-	void SuccessUpdate()
-	{
-            isCalledUpdate = true;
-	}
+    [StateListener(state = "GameState", when = "Success", on = "Update")]
+    void SuccessUpdate()
+    {
+        flag = true;
+    }
 }
