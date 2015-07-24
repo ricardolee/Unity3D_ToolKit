@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
-using System.Collections;
-using FSM;
+using Toolkit;
 
 [RequireComponent(typeof(EventDispatcher))]
 public class EventTriger : MonoBehaviour

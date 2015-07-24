@@ -2,10 +2,9 @@
 using System;
 using System.Text;
 using System.Reflection;
-using System.Collections;
 using System.Collections.Generic;
 
-namespace FSM
+namespace Toolkit
 {
     [RequireComponent(typeof(EventDispatcher))]
     public class FiniteStateMachine : MonoBehaviour
@@ -85,9 +84,6 @@ namespace FSM
         {
             public const string Enter = "Enter";
             public const string Exit = "Exit";
-            public const string Update = "Update";
-            public const string LateUpdate = "LateUpdate";
-            public const string FixedUpdate = "FixedUpdate";
         }
 
         private const String EVENT_PREFIX = "FSM";

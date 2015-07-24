@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
-using System.Collections;
-using FSM;
+using Toolkit;
 
 [RequireComponent(typeof(FiniteStateMachine))]
 public class StateEnter : MonoBehaviour

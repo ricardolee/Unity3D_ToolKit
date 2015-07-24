@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 
-namespace FSM
+namespace Toolkit
 {
     public class EventDispatcher : MonoBehaviour {
         private BindingFlags mMethodBindingFlags = BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic;
