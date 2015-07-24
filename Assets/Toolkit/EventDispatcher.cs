@@ -80,11 +80,10 @@ namespace Toolkit
             return Call(eventName, args);
         }
 
-        /*
-        public bool Cancel(Listener listener)
+        public bool Cancel(string eventName, Listener listener)
         {
             List<Listener> listeners = null;
-            if (mRegisteredEvents.TryGetValue(listener.mEventName, out listeners))
+            if (mRegisteredEvents.TryGetValue(eventName, out listeners))
             {
                 return listeners.Remove(listener);
             }
@@ -93,18 +92,18 @@ namespace Toolkit
                 return false;
             }
         }
-        */
-        Listener Register(Listener listener)
+
+        public Listener Register(string eventName,Listener listener)
         {
             if(listener == null) {
                 throw new Exception("Listener can't be null");
             }
             
             List<Listener> listenerList;
-            if (!mRegisteredEvents.TryGetValue(listener.mEventName, out listenerList))
+            if (!mRegisteredEvents.TryGetValue(eventName, out listenerList))
             {
                 listenerList = new List<Listener>();
-                mRegisteredEvents.Add(listener.mEventName, listenerList);
+                mRegisteredEvents.Add(eventName, listenerList);
             }
             listenerList.Add(listener);
             listenerList.Sort();
@@ -112,38 +111,45 @@ namespace Toolkit
 
         }
         
-        internal Listener Register(string eventName, EventFunc action, int weight, bool isFilter)
+        public Listener Register(string eventName, EventFunc action, int weight, bool isFilter)
+        {
+            return Register(eventName, GenListener(action, weight, isFilter));
+        }
+        
+        public Listener Register(string eventName, MethodInfo methodInfo, object instance, int weight, bool isFilter)
+        {
+            return Register(eventName, GenListener(methodInfo, instance, weight, isFilter));
+        }
+        
+        public Listener Register(string eventName, string methodName, object instance, int weight = 1000, bool isFilter = false)
+        {
+            return Register(eventName, GenListener(methodName, instance, weight, isFilter));
+        }
+
+        public Listener GenListener(EventFunc action, int weight, bool isFilter)
         {
             Listener  listener = new Listener();
             listener.mId = mNextListenID++;
-            listener.mEventName = eventName;
             listener.mAction = action;
             listener.mWeight = weight;
             listener.mIsFilter = isFilter;
-            return Register(listener);
+            return listener;
         }
         
-        internal Listener Register(string eventName, MethodInfo methodInfo, object instance, int weight, bool isFilter)
+        public Listener GenListener(MethodInfo methodInfo, object instance, int weight, bool isFilter)
         {
-            return Register(eventName, GetExecuteDelegate(methodInfo, instance, isFilter), weight, isFilter);
+            return GenListener(GetExecuteDelegate(methodInfo, instance, isFilter), weight, isFilter);
         }
         
-        internal Listener Register(string eventName, string methodName, object instance, int weight = 1000, bool isFilter = false)
+        public Listener GenListener(string methodName, object instance, int weight = 1000, bool isFilter = false)
         {
             MethodInfo methodInfo = instance.GetType().GetMethod(methodName, mMethodBindingFlags);
             if (methodInfo ==  null)
             {
                 throw new Exception("Not find the method : " + methodName);
             }
-            return Register(eventName,GetExecuteDelegate(methodInfo, instance, isFilter), weight, isFilter);
+            return GenListener(methodInfo, instance, weight, isFilter);
         }
-        
-        /*
-        public Listener Register(string eventName, string methodName, object instance, int weight = 1000)
-        {
-            return Register(eventName, methodName, instance, weight, false);
-        }
-        */
 
         int Call(String eventName, object[] args)
         {
@@ -174,12 +180,11 @@ namespace Toolkit
         
     }
 
-    delegate bool EventFunc(object[] args);
+    public delegate bool EventFunc(object[] args);
 
-    class Listener : IComparable<Listener>
+    public class Listener : IComparable<Listener>
     {
         internal int       mId;
-        internal string    mEventName;
         internal int       mWeight;
         internal bool      mIsFilter;
         internal EventFunc mAction;

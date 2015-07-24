@@ -43,19 +43,24 @@ namespace Toolkit
             return b.ToString();
         }
         
-        public void ChangeState(string state, string when)
+        public bool ChangeState(string state, string when)
         {
             string stateCurrent;
             if(mStateWhen.TryGetValue(state, out stateCurrent))
             {
+                if (stateCurrent == when )
+                {
+                    return false;
+                }
                 events.Trigger(GetEventName(state, stateCurrent, StateCallback.Exit));
-                stateCurrent = when;
+                mStateWhen[state] = when;
             }
             else
             {
                 mStateWhen.Add(state, when);
             }
             events.Trigger(GetEventName(state, when, StateCallback.Enter));
+            return true;
         }
 
         public string GetCurrentState(string state)
