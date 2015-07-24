@@ -100,7 +100,7 @@ namespace Toolkit
     {
         private string _state;
         private string _when;
-        private string _on;
+        private string _on = FiniteStateMachine.StateCallback.Enter;
 
         public string state
         {
