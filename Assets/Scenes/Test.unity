@@ -172,6 +172,24 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
+--- !u!114 &258937158
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da4a3a521c5c1494aae123742ca5c8f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  go: {fileID: 1309833961}
+  thisPropertyPath: EventTriggerTest.flag
+  compareToType: 1
+  other: {fileID: 0}
+  otherPropertyPath: 
+  constantValueGeneric: 20
+  compareType: 0
 --- !u!114 &361544247
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -184,7 +202,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   go: {fileID: 2100931118}
-  thisPropertyPath: StateEnter.flag
+  thisPropertyPath: StateEnterTest.flag
   compareToType: 1
   other: {fileID: 0}
   otherPropertyPath: 
@@ -288,7 +306,7 @@ MonoBehaviour:
   repeatEveryFrame: 1
   hasFailed: 0
   checkMethods: 2
-  m_ActionBase: {fileID: 1862792776}
+  m_ActionBase: {fileID: 258937158}
   checksPerformed: 0
 --- !u!114 &1309833964
 MonoBehaviour:
@@ -403,24 +421,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 2
---- !u!114 &1862792776
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: da4a3a521c5c1494aae123742ca5c8f5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  go: {fileID: 1309833961}
-  thisPropertyPath: EventTriger.flag
-  compareToType: 1
-  other: {fileID: 0}
-  otherPropertyPath: 
-  constantValueGeneric: 20
-  compareType: 0
 --- !u!114 &1918222200
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -433,7 +433,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   go: {fileID: 1987331687}
-  thisPropertyPath: StateUpdate.flag
+  thisPropertyPath: StateUpdateTest.flag
   compareToType: 1
   other: {fileID: 0}
   otherPropertyPath: 
@@ -587,7 +587,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2028250101
 Transform:
   m_ObjectHideFlags: 0

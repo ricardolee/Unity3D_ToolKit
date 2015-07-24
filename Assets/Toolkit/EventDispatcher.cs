@@ -45,7 +45,7 @@ namespace Toolkit
             {
                 if (paramInfos.Length != 1 || paramInfos[0].ParameterType != typeof(object[]))
                 {
-                    throw new Exception("The filer must only one param whith object[]");
+                    throw new Exception("The filter must only one param whith object[]");
                 }
                 parameterExpressions.Add(paramsExp);
             }

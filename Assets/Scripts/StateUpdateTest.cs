@@ -2,7 +2,7 @@
 using Toolkit;
 
 [RequireComponent(typeof(FiniteStateMachine))]
-public class StateUpdate : MonoBehaviour {
+public class StateUpdateTest : MonoBehaviour {
     
     [HideInInspector]
     public string state;

@@ -2,7 +2,7 @@
 using Toolkit;
 
 [RequireComponent(typeof(FiniteStateMachine))]
-public class StateEnter : MonoBehaviour
+public class StateEnterTest : MonoBehaviour
 {
     private FiniteStateMachine fsm;
 

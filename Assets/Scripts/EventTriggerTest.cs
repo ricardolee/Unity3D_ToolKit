@@ -2,7 +2,7 @@
 using Toolkit;
 
 [RequireComponent(typeof(EventDispatcher))]
-public class EventTriger : MonoBehaviour
+public class EventTriggerTest : MonoBehaviour
 {
 
     EventDispatcher events;
