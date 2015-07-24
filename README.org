@@ -1,46 +1,97 @@
 #+STARTUP: indent
-* Simple Finite State Machine for Unity3D (C#)
-Very effective way to manager game state. Idea from [[https://github.com/thefuntastic/Unity3d-Finite-State-Machine]]
-+ Simple use of Enum as state definition.
-+ Simple initialization
-+ Config by Attribute
-* Usage
-To use FSM only need a few simple steps
-** Inherits from StateBehaviour or NetworkStateBehaviour
+* Event Dispatcher
+Very effective way to manager game event. Like take damage and shoot etc..
++ Trigger Event simple
++ Configure Event Listener simple
++ Support config by Attribute
++ Support filter if you want modify event args.
+** Usage
+Few simple step
+*** Attach a EventDispatcher to GameObject
 #+BEGIN_SRC
-public class SomeScript : StateBehaviour 
-#+END_SRC
-** A enum for States
-#+BEGIN_SRC 
-public enum State
+EventDispatcher events;
+void Start()
 {
-    Success,
-    Failure,
+    events = GetComponent<EventDispatcher>()
 }
 #+END_SRC
-** Config state callbacks
+*** Declare a EventListener
 #+BEGIN_SRC 
-[StateBehaviour(state = "Success", on = "Enter")]
-void ChangeStateToSuccess()
+[EventListener(name = "DAMAGE")]
+void DamageHealth(int dmg)
 {
-    // Do somthing
+    health -= dmg;
 }
 #+END_SRC
-** Init FSM
+*** Trigger the Event
 #+BEGIN_SRC 
-InitState(State.Failure); 
+events.Trigger("DAMAGE", 10);
 #+END_SRC
-** Now you can call /ChangeState(xxx)/
+** Optional
+*** Declare a Filter
+#+BEGIN_SRC
+[EventFilter(name = "DAMAGE")]
+void DoubleDamage(object[] objs)
+{
+    objs[0] = (int)objs[0] * 2;
+}
+#+END_SRC
+you can return a bool. Break call chain if you return false.
+
+* Finite State Machine
+Same manager your game object state. It depend the Event Dispatcher
++ Change state simple, every state is define by a string
++ Support multi-state, like "GameState" "Health" etc
++ Support config state callback by Attribute 
++ Config unity behaviour callback easy, Like Update, FixUpdate
+** Usage
+*** Attach a FiniteStateMachine to GameObject it require EventDispatcher
 #+BEGIN_SRC 
-ChangeState(State.Success);
+FiniteStateMachine fsm;
+void Start()
+{
+    fsm = GetComponent<FiniteStateMachine>();
+}
 #+END_SRC
-* Supported method
-| method      | Couroutines supported |
-|-------------+-----------------------|
-| Enter       |           *           |
-| Exit        |           *           |
-| FixedUpdate |                       |
-| Update      |                       |
-| LateUpdate  |                       |
-| Finally     |                       |
+*** Declare a StateListener 
+like decare event listener.
+"Enter", "Exit" is Standard.
+#+BEGIN_SRC 
+[StateListener(state = "GameState", when = "Success", on = "Enter")]
+void ShowSuccessBox()
+{
+    //XXXXX;
+}
+#+END_SRC
+*** Change State
+#+BEGIN_SRC
+fsm.Change("GameState", "Success");
+#+END_SRC
+** Optional
+*** GetCurrentState
+#+BEGIN_SRC
+fsm.GetCurrentState("GameState"); // if not init, it will return null
+#+END_SRC
+*** Proxy MonoBehaviour event Callback
+#+BEGIN_SRC 
+[StateListener(state = "GameState", when = "Success", on = "Update")]
+void SuccessUpdate()
+{
+   // Do Update in Success;
+}
+[StateListener(state = "GameState", when = "Play", on = "Update")]
+void PlayUpdate()
+{
+   // Do Update in Play;
+}
+
+void Update() {
+    fsm.Trigger("GameState", "Update");
+}
+#+END_SRC
+When yout change "GameState" to Success or Play, it will auto proxy to the true Update callback.
+
+
+
+
 
