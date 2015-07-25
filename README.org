@@ -38,19 +38,19 @@ void DoubleDamage(object[] objs)
 #+END_SRC
 you can return a bool. Break call chain if you return false.
 
-* Finite State Machine
+* State Manager
 Same manager your game object state. It depend the Event Dispatcher
 + Change state simple, every state is define by a string
 + Support multi-state, like "GameState" "Health" etc
 + Support config state callback by Attribute 
 + Config unity behaviour callback easy, Like Update, FixUpdate
 ** Usage
-*** Attach a FiniteStateMachine to GameObject it require EventDispatcher
+*** Attach a StateManager to GameObject it require EventDispatcher
 #+BEGIN_SRC 
-FiniteStateMachine fsm;
+StateManager stateManager;
 void Start()
 {
-    fsm = GetComponent<FiniteStateMachine>();
+    stateManager = GetComponent<FiniteStateMachine>();
 }
 #+END_SRC
 *** Declare a StateListener 
@@ -65,12 +65,11 @@ void ShowSuccessBox()
 #+END_SRC
 *** Change State
 #+BEGIN_SRC
-fsm.Change("GameState", "Success");
+stateManager.Change("GameState", "Success");
 #+END_SRC
-** Optional
 *** GetCurrentState
 #+BEGIN_SRC
-fsm.GetCurrentState("GameState"); // if not init, it will return null
+stateManager.GetCurrentState("GameState"); // if not init, it will return null
 #+END_SRC
 *** Proxy MonoBehaviour event Callback
 #+BEGIN_SRC 
@@ -86,10 +85,15 @@ void PlayUpdate()
 }
 
 void Update() {
-    fsm.Trigger("GameState", "Update");
+    stateManager.Trigger("GameState", "Update");
 }
 #+END_SRC
 When yout change "GameState" to Success or Play, it will auto proxy to the true Update callback.
+*** Get a StateMachine Instance
+#+BEGIN_SRC 
+StateMachine sm = stateManager.GetStateMachine("GameState");
+sm.ChangeState("Success");
+#+END_SRC
 
 
 
