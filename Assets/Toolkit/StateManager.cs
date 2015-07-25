@@ -11,7 +11,7 @@ namespace Toolkit
     public class StateManager : MonoBehaviour
     {
         [HideInInspector]
-        EventDispatcher mEvents;
+        internal  EventDispatcher mEvents;
         public EventDispatcher Events { get { return mEvents; } }
 
         private BindingFlags mMethodBindingFlags = BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic;
@@ -74,7 +74,7 @@ namespace Toolkit
             }
 
         }
-        
+
         private const String EVENT_PREFIX = "FSM";
 
         private Dictionary<string, StateMachine> mStateMachineLookup = new Dictionary<string, StateMachine>();
@@ -89,15 +89,19 @@ namespace Toolkit
     public class StateMachine
     {
 
-        public StateMachine(EventDispatcher events, string stateName)
+        internal StateMachine(EventDispatcher events, string stateName)
         {
             this.mEvents = events;
             this.mStateName = stateName;
         }
-        public EventDispatcher mEvents;
-        // public EventDispatcher Events { get { return mEvents; } }
-        public string mStateName;
-        public string mCurrent;
+        internal EventDispatcher mEvents;
+        public EventDispatcher Events { get { return mEvents; }}
+
+        internal string mStateName;
+        public string StateName { get { return mStateName; }}
+        internal string mCurrent;
+        public string Current { get { return mCurrent; }}
+ 
         public Dictionary<string, EventTrigger> mCurrentTriggerLookup;
         public Dictionary<string, Dictionary<string, EventTrigger>> mTriggerDictLoockup = new Dictionary<string, Dictionary<string, EventTrigger>>();
         public void Trigger(string on, params object[] args) {
