@@ -112,8 +112,13 @@ namespace Toolkit
             EventTrigger trigger;
             if(!mCurrentTriggerLookup.TryGetValue(on, out trigger))
             {
-                trigger = mEvents.GetEventTrigger(StateManager.GetEventName(mStateName, mCurrent, on));
+                trigger = mEvents.GetEventTrigger(StateManager.GetEventName(mStateName, mCurrent, on), false);
+                if (trigger == null)
+                {
+                    return;
+                }
                 mCurrentTriggerLookup.Add(on, trigger);
+
             }
             trigger(args);
         }

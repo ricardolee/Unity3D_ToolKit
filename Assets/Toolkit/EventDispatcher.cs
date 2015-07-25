@@ -151,7 +151,7 @@ namespace Toolkit
             return GenListener(methodInfo, instance, weight, isFilter);
         }
 
-        public EventTrigger GetEventTrigger(string eventName)
+        public EventTrigger GetEventTrigger(string eventName, bool autoCreate = true)
         {
             EventTrigger trigger;
             if(!mEventTriggerLookup.TryGetValue(eventName, out trigger))
@@ -159,11 +159,16 @@ namespace Toolkit
                 List<Listener> listenerList;
                 if(!mRegisteredEvents.TryGetValue(eventName, out listenerList))
                 {
+                    if(!autoCreate)
+                    {
+                        return null;
+                    }
+                    
                     listenerList = new List<Listener>();
                     mRegisteredEvents.Add(eventName, listenerList);
                 }
                 trigger = (args) => {
-                    foreach(Listener listener in listenerList)
+                    foreach(Listener listener in listenerList.ToArray())
                     {
                         if(!listener.mAction(args))
                         {
