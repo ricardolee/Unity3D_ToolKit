@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using Toolkit;
 
-[RequireComponent(typeof(FiniteStateMachine))]
+[RequireComponent(typeof(StateManager))]
 public class StateUpdateTest : MonoBehaviour {
     
     [HideInInspector]
@@ -10,11 +10,11 @@ public class StateUpdateTest : MonoBehaviour {
     [HideInInspector]
     public bool flag = false;
 
-    FiniteStateMachine fsm;
+    StateManager fsm;
     // Use this for initialization
     
     void Start () {
-        fsm = GetComponent<FiniteStateMachine>();
+        fsm = GetComponent<StateManager>();
         fsm.ChangeState("GameState", "Success");
     }
 

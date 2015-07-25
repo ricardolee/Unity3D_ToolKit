@@ -1,17 +1,17 @@
 ﻿using UnityEngine;
 using Toolkit;
 
-[RequireComponent(typeof(FiniteStateMachine))]
+[RequireComponent(typeof(StateManager))]
 public class StateEnterTest : MonoBehaviour
 {
-    private FiniteStateMachine fsm;
+    private StateManager fsm;
 
     [HideInInspector]
     public bool flag = false;
     
     void Awake()
     {
-        fsm = GetComponent<FiniteStateMachine>();
+        fsm = GetComponent<StateManager>();
         fsm.ChangeState("GameState", "Failure");
     }
     
@@ -23,6 +23,7 @@ public class StateEnterTest : MonoBehaviour
     [StateListener(state = "GameState", when = "Success", on = "Enter")]
     void ChangeStateToSuccess()
     {
+        Debug.Log("Success Enter");
         flag = true;
     }
 

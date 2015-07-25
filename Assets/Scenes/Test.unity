@@ -560,7 +560,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b3e93dbff11046c1bfcef8ad46074cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  events: {fileID: 0}
 --- !u!114 &1987331695
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -803,7 +802,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b3e93dbff11046c1bfcef8ad46074cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  events: {fileID: 0}
 --- !u!114 &2100931126
 MonoBehaviour:
   m_ObjectHideFlags: 0
