@@ -11,8 +11,9 @@ namespace Toolkit
     public class StateManager : MonoBehaviour
     {
         public bool _AutoManageChildren = true;
-        private Dictionary<Type, System.Object> _StateMachineLookup = new Dictionary<Type,System.Object>();
+        private Dictionary<Type, System.Object> _StateMachineLookup = new Dictionary<Type, System.Object>();
         private static BindingFlags _MethodBindingFlags = BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic;
+
         void Awake()
         {
             List<MonoBehaviour> scripts = new List<MonoBehaviour>();
@@ -27,15 +28,15 @@ namespace Toolkit
                         System.Object state = sa.state;
                         Type stateType = state.GetType();
                         System.Object stateMachine;
-                        
+
                         if (!_StateMachineLookup.TryGetValue(stateType, out stateMachine))
                         {
-                            Type stateMachineType = Type.GetType("Toolkit.StateMachine`1[" + stateType +"]");
+                            Type stateMachineType = Type.GetType("Toolkit.StateMachine`1[" + stateType + "]");
                             stateMachine = Activator.CreateInstance(stateMachineType);
                             _StateMachineLookup.Add(stateType, stateMachine);
                         }
                         System.Object stateLookup = stateMachine.GetType().GetField("mStateLookup", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(stateMachine);
-                        StateMapping stateMapping = (StateMapping) stateLookup.GetType().GetMethod("get_Item", BindingFlags.Instance | BindingFlags.Public).Invoke(stateLookup, new object[]{state});
+                        StateMapping stateMapping = (StateMapping)stateLookup.GetType().GetMethod("get_Item", BindingFlags.Instance | BindingFlags.Public).Invoke(stateLookup, new object[] { state });
                         switch (sa.on)
                         {
                             case StateEvent.Enter:
@@ -95,18 +96,18 @@ namespace Toolkit
     public class StateMachine<T>
     {
         T _CurrentState;
-        StateMapping _CurrentMapping;
-        internal  Dictionary<T, StateMapping> _StateLookup = new Dictionary<T, StateMapping>();
+        internal StateMapping _CurrentMapping;
+        internal Dictionary<T, StateMapping> _StateLookup = new Dictionary<T, StateMapping>();
         public T CurrentState { get { return _CurrentState; } }
 
         public StateMapping GetMapping(T state)
         {
             return _StateLookup[state];
         }
-        
+
         public StateMachine()
         {
-            if (!typeof(T).IsEnum) 
+            if (!typeof(T).IsEnum)
             {
                 throw new ArgumentException("T must be an enumerated type");
             }
