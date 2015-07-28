@@ -10,7 +10,8 @@ public class StateUpdateTest : MonoBehaviour {
     [HideInInspector]
     public bool flag = false;
 
-    StateManager fsm;
+    [StateMachineInject]
+    StateMachine<GameState> sm;
 
     public enum GameState {
         Play, Success, Failure
@@ -18,12 +19,11 @@ public class StateUpdateTest : MonoBehaviour {
     // Use this for initialization
     
     void Start () {
-        fsm = GetComponent<StateManager>();
-        fsm.ChangeState(GameState.Success);
+        sm.Init(GameState.Success);
     }
 
     void Update() {
-
+        sm.Update();
     }
     
     [StateListener(state = GameState.Success, on = StateEvent.Enter)]

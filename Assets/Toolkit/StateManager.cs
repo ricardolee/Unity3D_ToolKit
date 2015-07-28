@@ -1,8 +1,6 @@
 ﻿using UnityEngine;
 using System;
-using System.Text;
 using System.Reflection;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace Toolkit
@@ -12,7 +10,6 @@ namespace Toolkit
     {
         public bool _AutoManageChildren = true;
         private Dictionary<Type, System.Object> _StateMachineLookup = new Dictionary<Type, System.Object>();
-        private static BindingFlags _MethodBindingFlags = BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic;
 
         void Awake()
         {
@@ -20,7 +17,7 @@ namespace Toolkit
             GetComponentsInChildren(_AutoManageChildren, scripts);
             foreach (MonoBehaviour script in scripts)
             {
-                MethodInfo[] methods = script.GetType().GetMethods(_MethodBindingFlags);
+                MethodInfo[] methods = script.GetType().GetMethods(BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic);
                 foreach (MethodInfo method in methods)
                 {
                     foreach (StateListenerAttribute sa in method.GetCustomAttributes(typeof(StateListenerAttribute), true))
@@ -28,15 +25,14 @@ namespace Toolkit
                         System.Object state = sa.state;
                         Type stateType = state.GetType();
                         System.Object stateMachine;
-
-                        if (!_StateMachineLookup.TryGetValue(stateType, out stateMachine))
+                        Type stateMachineType = Type.GetType("Toolkit.StateMachine`1[" + stateType + "]");
+                        if (!_StateMachineLookup.TryGetValue(stateMachineType, out stateMachine))
                         {
-                            Type stateMachineType = Type.GetType("Toolkit.StateMachine`1[" + stateType + "]");
                             stateMachine = Activator.CreateInstance(stateMachineType);
-                            _StateMachineLookup.Add(stateType, stateMachine);
+                            _StateMachineLookup.Add(stateMachineType, stateMachine);
                         }
-                        System.Object stateLookup = stateMachine.GetType().GetField("mStateLookup", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(stateMachine);
-                        StateMapping stateMapping = (StateMapping)stateLookup.GetType().GetMethod("get_Item", BindingFlags.Instance | BindingFlags.Public).Invoke(stateLookup, new object[] { state });
+                        System.Object stateLookup = stateMachine.GetType().GetField("_StateLookup", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public).GetValue(stateMachine);
+                        StateMapping stateMapping = (StateMapping)stateLookup.GetType().GetMethod("get_Item", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public).Invoke(stateLookup, new object[] { state });
                         switch (sa.on)
                         {
                             case StateEvent.Enter:
@@ -60,8 +56,27 @@ namespace Toolkit
                         }
                     }
                 }
-            }
+                FieldInfo[] fields = script.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                foreach (FieldInfo field in fields)
+                {
+                    foreach (StateMachineInjectAttribute se in field.GetCustomAttributes(typeof(StateMachineInjectAttribute), true))
+                    {
+                        if (!field.FieldType.ToString().Contains("StateMachine"))
+                        {
+                            throw new Exception("The filed type not a state machine");
+                        }
 
+                        System.Object stateMachine;
+                        Type stateMachineType = field.FieldType;
+                        if (!_StateMachineLookup.TryGetValue(stateMachineType, out stateMachine))
+                        {
+                            stateMachine = Activator.CreateInstance(stateMachineType); ;
+                            _StateMachineLookup.Add(stateMachineType, stateMachine);
+                        }
+                        field.SetValue(script, stateMachine);
+                    }
+                }
+            }
         }
 
 
@@ -77,7 +92,8 @@ namespace Toolkit
 
         public StateMachine<T> GetStateMachine<T>()
         {
-            return ((StateMachine<T>)_StateMachineLookup[typeof(T)]);
+            Type stateMachineType = Type.GetType("Toolkit.StateMachine`1[" + typeof(T) + "]");
+            return (StateMachine<T>)_StateMachineLookup[stateMachineType];
         }
 
         internal V CreateDelegate<V>(MethodInfo method, System.Object target) where V : class
@@ -141,6 +157,12 @@ namespace Toolkit
             }
         }
 
+
+        public void Finally() { _CurrentMapping.Finally(); }
+        public void Update() { _CurrentMapping.Update(); }
+        public void LateUpdate() { _CurrentMapping.LateUpdate(); }
+        public void FixedUpdate() { _CurrentMapping.FixedUpdate(); }
+
     }
 
     public enum StateTransition
@@ -169,6 +191,10 @@ namespace Toolkit
         public System.Object state { get; set; }
         public StateEvent on { get; set; }
     }
+
+    [AttributeUsage(AttributeTargets.Field)]
+    public class StateMachineInjectAttribute : Attribute { }
+
 
     public enum StateEvent
     {

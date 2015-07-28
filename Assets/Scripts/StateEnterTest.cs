@@ -8,6 +8,9 @@ public class StateEnterTest : MonoBehaviour
 
     [HideInInspector]
     public bool flag = false;
+
+
+    [StateMachineInject]
     public StateMachine<GameState> sm;
 
     public enum GameState {
@@ -18,8 +21,6 @@ public class StateEnterTest : MonoBehaviour
 
     void Awake()
     {
-        fsm = GetComponent<StateManager>();
-        sm = fsm.GetStateMachine<GameState>();
         sm.Init(GameState.Play);
     }
     

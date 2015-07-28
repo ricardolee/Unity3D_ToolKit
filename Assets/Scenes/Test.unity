@@ -172,6 +172,23 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
+--- !u!114 &660124869
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2586c8e41f35d2f4fadde53020bf4207, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  go: {fileID: 1987331687}
+  thisPropertyPath: StateUpdateTest.flag
+  compareToType: 1
+  other: {fileID: 0}
+  otherPropertyPath: 
+  constantValueGeneric: 1
 --- !u!1 &1190823312
 GameObject:
   m_ObjectHideFlags: 0
@@ -328,7 +345,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1330487633
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -414,7 +431,6 @@ GameObject:
   - 33: {fileID: 1987331693}
   - 135: {fileID: 1987331692}
   - 23: {fileID: 1987331691}
-  - 114: {fileID: 1987331695}
   - 114: {fileID: 1987331694}
   - 114: {fileID: 1987331690}
   - 114: {fileID: 1987331689}
@@ -451,12 +467,12 @@ MonoBehaviour:
   checkAfterTime: 1
   repeatCheckTime: 1
   repeatEveryTime: 1
-  checkAfterFrames: 1
+  checkAfterFrames: 10
   repeatCheckFrame: 1
   repeatEveryFrame: 1
   hasFailed: 0
   checkMethods: 4
-  m_ActionBase: {fileID: 0}
+  m_ActionBase: {fileID: 660124869}
   checksPerformed: 0
 --- !u!114 &1987331690
 MonoBehaviour:
@@ -525,17 +541,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b3e93dbff11046c1bfcef8ad46074cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1987331695
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1987331687}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b6942b36202284d46b8fcdbdcb015a63, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  _AutoManageChildren: 1
 --- !u!1 &2028250100
 GameObject:
   m_ObjectHideFlags: 0
@@ -551,7 +557,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2028250101
 Transform:
   m_ObjectHideFlags: 0
@@ -657,6 +663,7 @@ GameObject:
   - 33: {fileID: 2100931121}
   - 135: {fileID: 2100931120}
   - 23: {fileID: 2100931119}
+  - 114: {fileID: 2100931125}
   - 114: {fileID: 2100931124}
   - 114: {fileID: 2100931123}
   m_Layer: 0
@@ -739,7 +746,7 @@ MonoBehaviour:
   repeatCheckFrame: 1
   repeatEveryFrame: 1
   hasFailed: 0
-  checkMethods: 2
+  checkMethods: 4
   m_ActionBase: {fileID: 1223850908}
   checksPerformed: 0
 --- !u!114 &2100931124
@@ -754,3 +761,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   flag: 0
+--- !u!114 &2100931125
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 2100931118}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b3e93dbff11046c1bfcef8ad46074cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _AutoManageChildren: 1
