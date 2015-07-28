@@ -59,7 +59,8 @@ namespace Toolkit
                 FieldInfo[] fields = script.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
                 foreach (FieldInfo field in fields)
                 {
-                    foreach (StateMachineInjectAttribute se in field.GetCustomAttributes(typeof(StateMachineInjectAttribute), true))
+                    
+                    if(field.GetCustomAttributes(typeof(StateMachineInjectAttribute), true).Length > 0)
                     {
                         if (!field.FieldType.ToString().Contains("StateMachine"))
                         {
