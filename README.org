@@ -39,45 +39,46 @@ void DoubleDamage(object[] objs)
 you can return a bool. Break call chain if you return false.
 
 * State Manager
-Same manager your game object state. It depend the Event Dispatcher
-+ Change state simple, every state is define by a string
+Same manager your game object state.
++ Change state simple, use enum
 + Support multi-state, like "GameState" "Health" etc
-+ Support config state callback by Attribute 
++ Support config state event by Attribute 
++ Support inject state machine by Attribute
 + Config unity behaviour callback easy, Like Update, FixUpdate
 ** Usage
-*** Attach a StateManager to GameObject it require EventDispatcher
-#+BEGIN_SRC 
-StateManager stateManager;
-void Start()
-{
-    stateManager = GetComponent<FiniteStateMachine>();
+*** Require a StateManager to your class it will auto add to your gameobject.
+#+begin_src C
+[RequireComponent(typeof(StateManager))]
+class YourBehaviour : Monobehaviour
+#+end_src
+*** Declare a enum  
+#+begin_src c
+public enum GameState {
+    Play, Success, Failure
 }
-#+END_SRC
-*** Declare a StateListener 
-like decare event listener.
-"Enter", "Exit" is Standard.
-#+BEGIN_SRC 
-[StateListener(state = "GameState", when = "Success", on = "Enter")]
-void ShowSuccessBox()
-{
-    //XXXXX;
-}
-#+END_SRC
-*** Change State
-#+BEGIN_SRC
-stateManager.Change("GameState", "Success");
+#+end_src
+*** Declare a StateMachine with [StateMachinInject]
+#+begin_src C
+[StateMachineInject]
+public StateMachine<GameState> _gameStateMachie;
+#+end_src
+*** Init && Change State
+#+BEGIN_SRC C
+_gameStateMachine.Init(Play);
+_gameStateMachine.Change(GameState.Success);
 #+END_SRC
 *** GetCurrentState
-#+BEGIN_SRC
-stateManager.GetCurrentState("GameState"); // if not init, it will return null
+#+BEGIN_SRC C
+stateManager.CurrentState; // if not init, it will return null
 #+END_SRC
+*** Config StateEventCallback
+#+begin_src C
+[StateEvent(state = GameObject.Play, on = StateEvent.Enter)]
+void Play() {
+
+}
 *** Proxy MonoBehaviour event Callback
 #+BEGIN_SRC 
-[StateListener(state = "GameState", when = "Success", on = "Update")]
-void SuccessUpdate()
-{
-   // Do Update in Success;
-}
 [StateListener(state = "GameState", when = "Play", on = "Update")]
 void PlayUpdate()
 {
@@ -85,14 +86,13 @@ void PlayUpdate()
 }
 
 void Update() {
-    stateManager.Trigger("GameState", "Update");
+    stateManager.Update;
 }
 #+END_SRC
 When yout change "GameState" to Success or Play, it will auto proxy to the true Update callback.
-*** Get a StateMachine Instance
+*** Get a StateMachine Manual
 #+BEGIN_SRC 
-StateMachine sm = stateManager.GetStateMachine("GameState");
-sm.ChangeState("Success");
+StateMachine sm = stateManager.GetStateMachine<GameState>();
 #+END_SRC
 
 
