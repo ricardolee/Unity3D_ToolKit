@@ -204,7 +204,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1190823313
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -305,7 +305,7 @@ MonoBehaviour:
   repeatEveryFrame: 1
   hasFailed: 0
   checkMethods: 2
-  m_ActionBase: {fileID: 0}
+  m_ActionBase: {fileID: 1867416585}
   checksPerformed: 0
 --- !u!114 &1309833964
 MonoBehaviour:
@@ -345,7 +345,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1330487633
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -420,6 +420,24 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 2
+--- !u!114 &1867416585
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da4a3a521c5c1494aae123742ca5c8f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  go: {fileID: 1309833961}
+  thisPropertyPath: EventTriggerTest.flag
+  compareToType: 1
+  other: {fileID: 0}
+  otherPropertyPath: 
+  constantValueGeneric: 20
+  compareType: 0
 --- !u!1 &1987331687
 GameObject:
   m_ObjectHideFlags: 0

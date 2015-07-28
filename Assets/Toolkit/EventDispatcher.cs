@@ -77,7 +77,7 @@ namespace Toolkit
 
 
         public int Trigger(string eventName, params object[] args) {
-            return GetEventTrigger(eventName)(args);
+            return Call(eventName, args);
         }
 
         public bool Cancel(string eventName, Listener listener)
@@ -151,51 +151,35 @@ namespace Toolkit
             return GenListener(methodInfo, instance, weight, isFilter);
         }
 
-        internal  EventTrigger GetEventTrigger(string eventName, bool autoCreate = true)
+        int Call(String eventName, object[] args)
         {
-            EventTrigger trigger;
-            if(!mEventTriggerLookup.TryGetValue(eventName, out trigger))
+            List<Listener> listenerList = null;
+            if(mRegisteredEvents.TryGetValue(eventName, out listenerList))
             {
-                List<Listener> listenerList;
-                if(!mRegisteredEvents.TryGetValue(eventName, out listenerList))
+                foreach(Listener listener in listenerList)
                 {
-                    if(!autoCreate)
+                    if(!listener.mAction(args))
                     {
-                        return null;
+                        return 2;
                     }
-                    
-                    listenerList = new List<Listener>();
-                    mRegisteredEvents.Add(eventName, listenerList);
                 }
-                trigger = (args) => {
-                    foreach(Listener listener in listenerList.ToArray())
-                    {
-                        if(!listener.mAction(args))
-                        {
-                            return 2;
-                        }
-                    }
-                    if(listenerList.Count != 0)
-                    {
-                        return 0;
-                    }
-                    else
-                    {
-                        return 1;
-                    }    
-                };
             }
-            return trigger;
+
+            if(listenerList != null && listenerList.Count !=0 )
+            {
+                return 0;
+            }
+            else
+            {
+                return 1;
+            }
         }
 
-        Dictionary<string, EventTrigger> mEventTriggerLookup = new Dictionary<string, EventTrigger>();
         Dictionary<string, List<Listener>> mRegisteredEvents  = new Dictionary<string, List<Listener>>();
         int mNextListenID = 1;
         
     }
 
-    public delegate int EventTrigger(params object[] args);
-    
     public delegate bool EventFunc(object[] args);
 
     public class Listener : IComparable<Listener>
