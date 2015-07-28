@@ -111,12 +111,12 @@ namespace Toolkit
 
         }
         
-        public Listener Register(string eventName, EventFunc action, int weight, bool isFilter)
+        public Listener Register(string eventName, EventFunc action, int weight = 1000, bool isFilter = false)
         {
             return Register(eventName, GenListener(action, weight, isFilter));
         }
         
-        public Listener Register(string eventName, MethodInfo methodInfo, object instance, int weight, bool isFilter)
+        public Listener Register(string eventName, MethodInfo methodInfo, object instance, int weight = 1000, bool isFilter = false)
         {
             return Register(eventName, GenListener(methodInfo, instance, weight, isFilter));
         }
@@ -129,14 +129,13 @@ namespace Toolkit
         public Listener GenListener(EventFunc action, int weight, bool isFilter)
         {
             Listener  listener = new Listener();
-            listener.mId = mNextListenID++;
             listener.mAction = action;
             listener.mWeight = weight;
             listener.mIsFilter = isFilter;
             return listener;
         }
         
-        public Listener GenListener(MethodInfo methodInfo, object instance, int weight, bool isFilter)
+        public Listener GenListener(MethodInfo methodInfo, object instance, int weight = 1000, bool isFilter = false)
         {
             return GenListener(GetExecuteDelegate(methodInfo, instance, isFilter), weight, isFilter);
         }
@@ -176,15 +175,12 @@ namespace Toolkit
         }
 
         Dictionary<string, List<Listener>> mRegisteredEvents  = new Dictionary<string, List<Listener>>();
-        int mNextListenID = 1;
-        
-    }
+     }
 
     public delegate bool EventFunc(object[] args);
 
     public class Listener : IComparable<Listener>
     {
-        internal int       mId;
         internal int       mWeight;
         internal bool      mIsFilter;
         internal EventFunc mAction;
