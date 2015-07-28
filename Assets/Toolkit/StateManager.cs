@@ -2,168 +2,176 @@
 using System;
 using System.Text;
 using System.Reflection;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Toolkit
 {
-    
-    [RequireComponent(typeof(EventDispatcher))]
+
     public class StateManager : MonoBehaviour
     {
-        [HideInInspector]
-        internal  EventDispatcher mEvents;
-        public EventDispatcher Events { get { return mEvents; } }
-
-        private BindingFlags mMethodBindingFlags = BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic;
+        public bool _AutoManageChildren = true;
+        private Dictionary<Type, System.Object> _StateMachineLookup = new Dictionary<Type,System.Object>();
+        private static BindingFlags _MethodBindingFlags = BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic;
         void Awake()
         {
-            mEvents = GetComponent<EventDispatcher>();
             List<MonoBehaviour> scripts = new List<MonoBehaviour>();
-            GetComponentsInChildren(true, scripts);
+            GetComponentsInChildren(_AutoManageChildren, scripts);
             foreach (MonoBehaviour script in scripts)
             {
-                MethodInfo[] methods = script.GetType().GetMethods(mMethodBindingFlags);
+                MethodInfo[] methods = script.GetType().GetMethods(_MethodBindingFlags);
                 foreach (MethodInfo method in methods)
                 {
                     foreach (StateListenerAttribute sa in method.GetCustomAttributes(typeof(StateListenerAttribute), true))
                     {
-                        mEvents.Register(GetEventName(sa.state, sa.when, sa.on), method, script, 1000, false);
+                        System.Object state = sa.state;
+                        Type stateType = state.GetType();
+                        System.Object stateMachine;
+                        
+                        if (!_StateMachineLookup.TryGetValue(stateType, out stateMachine))
+                        {
+                            Type stateMachineType = Type.GetType("Toolkit.StateMachine`1[" + stateType +"]");
+                            stateMachine = Activator.CreateInstance(stateMachineType);
+                            _StateMachineLookup.Add(stateType, stateMachine);
+                        }
+                        System.Object stateLookup = stateMachine.GetType().GetField("mStateLookup", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(stateMachine);
+                        StateMapping stateMapping = (StateMapping) stateLookup.GetType().GetMethod("get_Item", BindingFlags.Instance | BindingFlags.Public).Invoke(stateLookup, new object[]{state});
+                        switch (sa.on)
+                        {
+                            case StateEvent.Enter:
+                                stateMapping.Enter = CreateDelegate<Action>(method, script);
+                                break;
+                            case StateEvent.Exit:
+                                stateMapping.Exit = CreateDelegate<Action>(method, script);
+                                break;
+                            case StateEvent.Finally:
+                                stateMapping.Finally = CreateDelegate<Action>(method, script);
+                                break;
+                            case StateEvent.FixedUpdate:
+                                stateMapping.FixedUpdate = CreateDelegate<Action>(method, script);
+                                break;
+                            case StateEvent.LateUpdate:
+                                stateMapping.LateUpdate = CreateDelegate<Action>(method, script);
+                                break;
+                            case StateEvent.Update:
+                                stateMapping.Update = CreateDelegate<Action>(method, script);
+                                break;
+                        }
                     }
                 }
             }
-        }
-        
-        public static String GetEventName(string state, string when, string on)
-        {
-            StringBuilder b = new StringBuilder();
-            b.Append(EVENT_PREFIX);
-            b.Append('_');
-            b.Append(state);
-            b.Append('_');
-            b.Append(when);
-            b.Append('_');
-            b.Append(on);
-            return b.ToString();
+
         }
 
-        public StateMachine GetStateMachine(string stateName) {
-            StateMachine sm;
-            if (!mStateMachineLookup.TryGetValue(stateName, out sm))
+
+        public bool ChangeState<T>(T state)
+        {
+            return GetStateMachine<T>().ChangeState(state);
+        }
+
+        public T GetCurrentState<T>()
+        {
+            return GetStateMachine<T>().CurrentState;
+        }
+
+        public StateMachine<T> GetStateMachine<T>()
+        {
+            return ((StateMachine<T>)_StateMachineLookup[typeof(T)]);
+        }
+
+        internal V CreateDelegate<V>(MethodInfo method, System.Object target) where V : class
+        {
+            var ret = (Delegate.CreateDelegate(typeof(V), target, method) as V);
+
+            if (ret == null)
             {
-                sm = new StateMachine(mEvents, stateName);
-                mStateMachineLookup.Add(stateName, sm);
+                throw new ArgumentException("Unabled to create delegate for method called " + method.Name);
             }
-            return sm;
-        }
-        public bool ChangeState(string stateName, string when)
-        {
-            return GetStateMachine(stateName).ChangeState(when);
-        }
-
-        public string GetCurrentState(string stateName)
-        {
-            return GetStateMachine(stateName).mCurrent;
-        }
-        
-        public void Trigger(string stateName, string on, params object[] args)
-        {
-            StateMachine sm;
-            if(mStateMachineLookup.TryGetValue(stateName, out sm))
-            {
-                sm.Trigger(on);
-            }
+            return ret;
 
         }
-
-        private const String EVENT_PREFIX = "FSM";
-
-        private Dictionary<string, StateMachine> mStateMachineLookup = new Dictionary<string, StateMachine>();
-    }
-    
-    public static class StateCallback
-    {
-        public const string Enter = "Enter";
-        public const string Exit = "Exit";
     }
 
-    public class StateMachine
+    public class StateMachine<T>
     {
+        T _CurrentState;
+        StateMapping _CurrentMapping;
+        internal  Dictionary<T, StateMapping> _StateLookup = new Dictionary<T, StateMapping>();
+        public T CurrentState { get { return _CurrentState; } }
 
-        internal StateMachine(EventDispatcher events, string stateName)
+        public StateMapping GetMapping(T state)
         {
-            this.mEvents = events;
-            this.mStateName = stateName;
+            return _StateLookup[state];
         }
-        internal EventDispatcher mEvents;
-        public EventDispatcher Events { get { return mEvents; }}
-
-        internal string mStateName;
-        public string StateName { get { return mStateName; }}
-        internal string mCurrent;
-        public string Current { get { return mCurrent; }}
- 
-        public Dictionary<string, EventTrigger> mCurrentTriggerLookup;
-        public Dictionary<string, Dictionary<string, EventTrigger>> mTriggerDictLoockup = new Dictionary<string, Dictionary<string, EventTrigger>>();
-        public void Trigger(string on, params object[] args) {
-            if (mCurrent == null)
+        
+        public StateMachine()
+        {
+            if (!typeof(T).IsEnum) 
             {
-                return;
+                throw new ArgumentException("T must be an enumerated type");
             }
-            EventTrigger trigger;
-            if(!mCurrentTriggerLookup.TryGetValue(on, out trigger))
+            var values = Enum.GetValues(typeof(T));
+            foreach (var v in values)
             {
-                trigger = mEvents.GetEventTrigger(StateManager.GetEventName(mStateName, mCurrent, on), false);
-                if (trigger == null)
-                {
-                    return;
-                }
-                mCurrentTriggerLookup.Add(on, trigger);
-
+                _StateLookup.Add((T)v, new StateMapping());
             }
-            trigger(args);
         }
 
-        public bool ChangeState(string when)
+        public void Init(T initState)
         {
-            if (when == null || when == mCurrent) {
+            _CurrentState = initState;
+            _CurrentMapping = _StateLookup[initState];
+            _CurrentMapping.Enter();
+        }
+        // Make sure you init the Machine
+        public bool ChangeState(T state)
+        {
+            if (state.Equals(_CurrentState))
+            {
                 return false;
             }
-            Trigger(StateCallback.Exit);
-            mCurrent = when;
-            if(!mTriggerDictLoockup.TryGetValue(mCurrent, out mCurrentTriggerLookup))
+            else
             {
-                mCurrentTriggerLookup = new Dictionary<string, EventTrigger>();
-                mTriggerDictLoockup.Add(mCurrent, mCurrentTriggerLookup);
+                _CurrentMapping.Exit();
+                _CurrentState = state;
+                _CurrentMapping = _StateLookup[state];
+                _CurrentMapping.Enter();
+                return true;
             }
-            Trigger(StateCallback.Enter);
-            return true;
         }
+
     }
 
+    public enum StateTransition
+    {
+        Overwrite,
+        Safe
+    }
+
+    public class StateMapping
+    {
+        public Action Enter = DoNothing;
+        public Action Exit = DoNothing;
+        public Action Finally = DoNothing;
+        public Action Update = DoNothing;
+        public Action LateUpdate = DoNothing;
+        public Action FixedUpdate = DoNothing;
+
+        public static void DoNothing()
+        {
+        }
+    }
 
     [AttributeUsage(AttributeTargets.Method)]
     public class StateListenerAttribute : Attribute
     {
-        private string _state;
-        private string _when;
-        private string _on = StateCallback.Enter;
-
-        public string state
-        {
-            get { return _state; }
-            set { _state = value; }
-        }
-
-        public string when
-        {
-            get { return _when; }
-            set { _when = value; }
-        }
-
-        public string on
-        {
-            get { return _on; }
-            set { _on = value; }
-        }
+        public System.Object state { get; set; }
+        public StateEvent on { get; set; }
     }
+
+    public enum StateEvent
+    {
+        Enter, Exit, Finally, Update, LateUpdate, FixedUpdate
+    }
+
 }

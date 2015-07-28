@@ -151,7 +151,7 @@ namespace Toolkit
             return GenListener(methodInfo, instance, weight, isFilter);
         }
 
-        public EventTrigger GetEventTrigger(string eventName, bool autoCreate = true)
+        internal  EventTrigger GetEventTrigger(string eventName, bool autoCreate = true)
         {
             EventTrigger trigger;
             if(!mEventTriggerLookup.TryGetValue(eventName, out trigger))

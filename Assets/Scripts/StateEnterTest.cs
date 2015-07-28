@@ -8,19 +8,27 @@ public class StateEnterTest : MonoBehaviour
 
     [HideInInspector]
     public bool flag = false;
-    
+    public StateMachine<GameState> sm;
+
+    public enum GameState {
+        Play,
+        Success,
+        Failure
+    }
+
     void Awake()
     {
         fsm = GetComponent<StateManager>();
-        fsm.ChangeState("GameState", "Failure");
+        sm = fsm.GetStateMachine<GameState>();
+        sm.Init(GameState.Play);
     }
     
     void Start()
     {
-        fsm.ChangeState("GameState", "Success");
+        sm.ChangeState(GameState.Success);
     }
     
-    [StateListener(state = "GameState", when = "Success", on = "Enter")]
+    [StateListener(state = GameState.Success, on = StateEvent.Enter)]
     void ChangeStateToSuccess()
     {
         Debug.Log("Success Enter");

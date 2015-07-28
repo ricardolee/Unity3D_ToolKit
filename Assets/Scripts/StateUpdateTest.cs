@@ -11,18 +11,22 @@ public class StateUpdateTest : MonoBehaviour {
     public bool flag = false;
 
     StateManager fsm;
+
+    public enum GameState {
+        Play, Success, Failure
+    }
     // Use this for initialization
     
     void Start () {
         fsm = GetComponent<StateManager>();
-        fsm.ChangeState("GameState", "Success");
+        fsm.ChangeState(GameState.Success);
     }
 
     void Update() {
-        fsm.Trigger("GameState", "Update");
-    }
 
-    [StateListener(state = "GameState", when = "Success", on = "Update")]
+    }
+    
+    [StateListener(state = GameState.Success, on = StateEvent.Enter)]
     void SuccessUpdate()
     {
         flag = true;
