@@ -155,7 +155,7 @@ namespace Toolkit
             List<Listener> listenerList = null;
             if(mRegisteredEvents.TryGetValue(eventName, out listenerList))
             {
-                foreach(Listener listener in listenerList)
+                foreach(Listener listener in listenerList.ToArray())
                 {
                     if(!listener.mAction(args))
                     {
