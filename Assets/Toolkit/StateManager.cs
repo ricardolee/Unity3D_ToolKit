@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System;
 using System.Reflection;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Toolkit
@@ -36,13 +37,17 @@ namespace Toolkit
                         switch (sa.on)
                         {
                             case StateEvent.Enter:
-                                stateMapping.Enter = CreateDelegate<Action>(method, script);
+                                if (method.ReturnType == typeof(IEnumerator))
+                                {
+                                    stateMapping.Enter = () => { script.StartCoroutine(CreateDelegate<Func<IEnumerator>>(method, script)()); };
+                                }
+                                else
+                                {
+                                    stateMapping.Enter = CreateDelegate<Action>(method, script);
+                                }
                                 break;
                             case StateEvent.Exit:
                                 stateMapping.Exit = CreateDelegate<Action>(method, script);
-                                break;
-                            case StateEvent.Finally:
-                                stateMapping.Finally = CreateDelegate<Action>(method, script);
                                 break;
                             case StateEvent.FixedUpdate:
                                 stateMapping.FixedUpdate = CreateDelegate<Action>(method, script);
@@ -82,7 +87,7 @@ namespace Toolkit
 
 
         public bool ChangeState<T>(T state)
-        {
+         {
             return GetStateMachine<T>().ChangeState(state);
         }
 
@@ -158,8 +163,6 @@ namespace Toolkit
             }
         }
 
-
-        public void Finally() { _CurrentMapping.Finally(); }
         public void Update() { _CurrentMapping.Update(); }
         public void LateUpdate() { _CurrentMapping.LateUpdate(); }
         public void FixedUpdate() { _CurrentMapping.FixedUpdate(); }
@@ -176,7 +179,6 @@ namespace Toolkit
     {
         public Action Enter = DoNothing;
         public Action Exit = DoNothing;
-        public Action Finally = DoNothing;
         public Action Update = DoNothing;
         public Action LateUpdate = DoNothing;
         public Action FixedUpdate = DoNothing;
