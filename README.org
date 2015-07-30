@@ -73,11 +73,11 @@ stateManager.CurrentState; // if not init, it will return null
 #+END_SRC
 *** Config StateEventCallback
 #+begin_src C
-[StateEvent(state = GameObject.Play, on = StateEvent.Enter)]
+[StateEvent(state = GameObject.Play, on = StateEvent.Enter)] // The Enter support coroutine
 void Play() {
 
 }
-*** Proxy MonoBehaviour event Callback
+ Proxy MonoBehaviour event Callback
 #+BEGIN_SRC 
 [StateListener(state = "GameState", when = "Play", on = "Update")]
 void PlayUpdate()
