@@ -39,7 +39,8 @@ namespace Toolkit
                             case StateEvent.Enter:
                                 if (method.ReturnType == typeof(IEnumerator))
                                 {
-                                    stateMapping.Enter = () => { script.StartCoroutine(CreateDelegate<Func<IEnumerator>>(method, script)()); };
+                                    Func<IEnumerator> func = CreateDelegate<Func<IEnumerator>>(method, script);
+                                    stateMapping.Enter = () => { script.StartCoroutine(func());};
                                 }
                                 else
                                 {
